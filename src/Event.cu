@@ -43,7 +43,7 @@ namespace cuweaver {
         return flags;
     }
 
-    void cudaEvent::reset(const cudaEvent_t event) noexcept {
+    void cudaEvent::reset(cudaEvent_t event) noexcept {
         if (this->isValid()) {
             cudaEventDestroy(this->event);
         }
