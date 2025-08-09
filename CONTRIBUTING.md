@@ -78,14 +78,14 @@ contributions.**
 
 ### Naming Conventions
 
-| Element          | Convention                            | Example                                  |
-|------------------|---------------------------------------|------------------------------------------|
-| Files            | Descriptive names, free form          | `CudaEvent.cuh`, `helpers.hpp`           |
-| Classes/Structs  | PascalCase; `cuda` prefix lowercase   | `CudaEvent`, `cudaStream`                |
-| Functions        | camelCase (lower camel)               | `recordEvent()`                          |
-| Variables        | camelCase                             | `deviceCount`                            |
-| Macros           | UPPER_CASE with underscores           | `CUW_THROW_IF_ERROR`                     |
-| Namespaces       | lowercase single word                 | `cuweaver::utils`                        |
+| Element          | Convention                            | Example                        |
+|------------------|---------------------------------------|--------------------------------|
+| Files            | Descriptive names, free form          | `CudaEvent.cuh`, `helpers.hpp` |
+| Classes/Structs  | PascalCase; `cuda` prefix lowercase   | `cudaEvent`, `StreamManager`   |
+| Functions        | camelCase (lower camel)               | `recordEvent()`                |
+| Variables        | camelCase                             | `deviceCount`                  |
+| Macros           | UPPER_CASE with underscores           | `CUW_THROW_IF_ERROR`           |
+| Namespaces       | lowercase single word                 | `cuweaver::utils`              |
 
 **Note:** When a class or struct name begins with `cuda`, the prefix `cuda` should remain lowercase (e.g., `cudaStream`). All other class and struct names follow the PascalCase (Upper Camel) convention.
 
