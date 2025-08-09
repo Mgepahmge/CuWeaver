@@ -69,7 +69,7 @@ namespace cuweaver {
          * @param[in] priority The priority value to validate.
          * @return True if `priority` is between `getGreatestPriority()` and `getLeastPriority()` (inclusive); false otherwise.
          */
-        static inline bool isPriorityValid(cudaStreamPriority_t priority) noexcept;
+        static bool isPriorityValid(cudaStreamPriority_t priority) noexcept;
 
         /**
          * @brief Constructs a CUDA stream with default flags and priority.
