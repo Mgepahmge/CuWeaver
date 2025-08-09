@@ -33,9 +33,9 @@ TEST(CudaRuntimeTest, MallocFailure) {
     try {
         CUW_THROW_IF_ERROR(cudaMalloc(&d_ptr, big));
         cudaFree(d_ptr);
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_NE(ex.code_native(), cudaSuccess);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_NE(ex.codeNative(), cudaSuccess);
         const std::string expected_op = "cudaMalloc(&d_ptr, big)";
         EXPECT_EQ(ex.context().op, expected_op);
         EXPECT_TRUE(ex.context().detail.empty());
@@ -50,9 +50,9 @@ TEST(CudaRuntimeTest, MemsetInvalidValue) {
     const size_t count = 4;
     try {
         CUW_THROW_IF_ERROR(cudaMemset(d_ptr, 0, count));
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_NE(ex.code_native(), cudaSuccess);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_NE(ex.codeNative(), cudaSuccess);
         EXPECT_EQ(ex.context().op, std::string("cudaMemset(d_ptr, 0, count)"));
         EXPECT_TRUE(ex.context().detail.empty());
     } catch (...) {
@@ -70,12 +70,12 @@ TEST(CudaErrorHandlingTest, ThrowsWithProperContext) {
     const cudaError_t code = cudaErrorInvalidValue;
     try {
         invoke_throw_if_error(code);
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_EQ(ex.code_native(), code);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_EQ(ex.codeNative(), code);
         const std::error_code ec = ex.code();
         EXPECT_EQ(ec.value(), static_cast<int>(code));
-        EXPECT_STREQ(ec.category().name(), cuweaver::cuda_error_category().name());
+        EXPECT_STREQ(ec.category().name(), cuweaver::cudaErrorCategory().name());
         EXPECT_EQ(ex.context().op, std::string("code"));
         EXPECT_TRUE(ex.context().detail.empty());
         EXPECT_TRUE(contains_substr(ex.context().loc.file, "ErrorHandlingTest.cu"));
@@ -92,9 +92,9 @@ TEST(CudaErrorHandlingTest, ThrowsWithCustomDetail) {
     const char* detail = "Allocation of temporary buffer failed";
     try {
         invoke_throw_if_error_with_detail(code, detail);
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_EQ(ex.code_native(), code);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_EQ(ex.codeNative(), code);
         const auto& ctx = ex.context();
         EXPECT_EQ(ctx.op, std::string("code"));
         EXPECT_EQ(ctx.detail, std::string(detail));
@@ -111,10 +111,10 @@ TEST(CudaErrorHandlingTest, ThrowIfErrorOverloadWithCustomOpAndDetail) {
     const std::string op = "Launching kernel";
     const std::string detail = "Device ID 99 does not exist";
     try {
-        cuweaver::throw_if_error(code, op, detail, loc);
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_EQ(ex.code_native(), code);
+        cuweaver::throwIfError(code, op, detail, loc);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_EQ(ex.codeNative(), code);
         const auto& ctx = ex.context();
         EXPECT_EQ(ctx.op, op);
         EXPECT_EQ(ctx.detail, detail);
@@ -131,10 +131,10 @@ TEST(CudaErrorHandlingTest, ThrowIfErrorOverloadWithoutDetail) {
     const auto loc = CUW_HERE;
     const std::string op = "Unsupported operation";
     try {
-        cuweaver::throw_if_error(code, op, loc);
-        FAIL() << "Expected cuweaver::cuda_error to be thrown";
-    } catch (const cuweaver::cuda_error& ex) {
-        EXPECT_EQ(ex.code_native(), code);
+        cuweaver::throwIfError(code, op, loc);
+        FAIL() << "Expected cuweaver::cudaError to be thrown";
+    } catch (const cuweaver::cudaError& ex) {
+        EXPECT_EQ(ex.codeNative(), code);
         const auto& ctx = ex.context();
         EXPECT_EQ(ctx.op, op);
         EXPECT_TRUE(ctx.detail.empty());
@@ -151,20 +151,20 @@ TEST(CudaErrorHandlingTest, CheckReturnsExpectedErrorCode) {
         std::error_code ec = cuweaver::check(cudaSuccess);
         EXPECT_EQ(ec.value(), 0);
         EXPECT_FALSE(ec);
-        EXPECT_STREQ(ec.category().name(), cuweaver::cuda_error_category().name());
+        EXPECT_STREQ(ec.category().name(), cuweaver::cudaErrorCategory().name());
     }
     {
         const cudaError_t code = cudaErrorInvalidPitchValue;
         std::error_code ec = cuweaver::check(code);
         EXPECT_EQ(ec.value(), static_cast<int>(code));
         EXPECT_TRUE(ec);
-        EXPECT_STREQ(ec.category().name(), cuweaver::cuda_error_category().name());
+        EXPECT_STREQ(ec.category().name(), cuweaver::cudaErrorCategory().name());
     }
 }
 
 TEST(CudaErrorHandlingTest, CudaErrorCategoryIsSingleton) {
-    const std::error_category& cat1 = cuweaver::cuda_error_category();
-    const std::error_category& cat2 = cuweaver::cuda_error_category();
+    const std::error_category& cat1 = cuweaver::cudaErrorCategory();
+    const std::error_category& cat2 = cuweaver::cudaErrorCategory();
     EXPECT_EQ(&cat1, &cat2);
     EXPECT_FALSE(std::string(cat1.name()).empty());
 }
