@@ -94,6 +94,18 @@ Once the library is installed, you can use it to manage concurrency in your CUDA
 
 ---
 
+## Contributing
+
+We welcome contributions from the community!  Please see [Contributing Guide](CONTRIBUTING.md) for detailed guidelines on how to get involved.
+
+---
+
+## Testing
+
+For instructions on building and running the test suite, please refer to [Testing Guide](docs/TESTING.md).
+
+---
+
 ## License
 
 CuWeaver is licensed under the [MIT License](LICENSE).
