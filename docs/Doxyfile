@@ -971,7 +971,8 @@ INPUT                  = ../src \
                          ../include/cuweaver \
                          ../include/cuweaver_utils \
                          ../internal \
-                         ../internal/detail
+                         ../internal/detail \
+                         doxygen_main.md
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
