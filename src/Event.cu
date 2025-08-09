@@ -13,7 +13,7 @@ namespace cuweaver {
         cudaEventCreate(&event, flags);
     }
 
-    cudaEvent::cudaEvent(const cudaEvent_t event) : event(event), flags(static_cast<cudaEventFlags_t>(cudaEventFlags::Default)) {
+    cudaEvent::cudaEvent(cudaEvent_t event) : event(event), flags(static_cast<cudaEventFlags_t>(cudaEventFlags::Default)) {
     }
 
     cudaEvent::cudaEvent(cudaEvent&& other) noexcept : event(other.event), flags(other.flags) {
