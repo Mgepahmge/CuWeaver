@@ -75,31 +75,43 @@ namespace cuweaver {
          * @brief Constructs a CUDA stream with default flags and priority.
          *
          * @details Initializes the stream using `cudaStreamFlags::Default` (0x00) and `DefaultPriority` (0),
-         * then creates the stream via `cudaStreamCreateWithPriority`.
+         * then creates the stream via `cudaStreamCreateWithPriority`. If `cudaStreamCreateWithPriority` fails
+         * (returns a non-cudaSuccess status), a `cuweaver::cudaError` is thrown with contextual error information.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaStreamCreateWithPriority` fails to create the CUDA stream.
          */
         cudaStream();
 
         /**
-         * @brief Constructs a CUDA stream with specified flags and priority.
-         *
-         * @details Validates `priority` against the range from `getGreatestPriority()` to `getLeastPriority()`.
-         * Uses `DefaultPriority` if the input is invalid. Creates the stream with the specified (or corrected)
-         * parameters via `cudaStreamCreateWithPriority`.
+         * @brief Constructs a CUDA stream with specified type-safe flags and priority.
          *
          * @param[in] flags Configuration flags from the `cudaStreamFlags` enumeration.
          * @param[in] priority Priority of the stream (defaults to `DefaultPriority`).
+         *
+         * @details Validates `priority` against the range from `getGreatestPriority()` to `getLeastPriority()`.
+         * Uses `DefaultPriority` if the input is invalid. Converts the enum flags to the native `cudaStreamFlags_t` type,
+         * then creates the stream via `cudaStreamCreateWithPriority` with the provided flags and (corrected) priority.
+         * If `cudaStreamCreateWithPriority` fails (returns a non-cudaSuccess status), a `cuweaver::cudaError` is thrown
+         * with contextual error information.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaStreamCreateWithPriority` fails to create the CUDA stream.
          */
         explicit cudaStream(cudaStreamFlags flags, cudaStreamPriority_t priority = DefaultPriority);
 
         /**
-        * @brief Constructs a CUDA stream with raw flags and specified priority.
-        *
-        * @details Similar to the `cudaStreamFlags` overload, but accepts a raw unsigned integer for flags.
-        * Validates `priority` and uses `DefaultPriority` if invalid. Creates the stream via `cudaStreamCreateWithPriority`.
-        *
-        * @param[in] flags Raw unsigned integer representing stream configuration flags.
-        * @param[in] priority Priority of the stream (defaults to `DefaultPriority`).
-        */
+         * @brief Constructs a CUDA stream with raw flags and specified priority.
+         *
+         * @param[in] flags Raw unsigned integer representing stream configuration flags.
+         * @param[in] priority Priority of the stream (defaults to `DefaultPriority`).
+         *
+         * @details Similar to the `cudaStreamFlags` overload, but accepts a raw `cudaStreamFlags_t` value for flags.
+         * Validates `priority` against the range from `getGreatestPriority()` to `getLeastPriority()`; uses
+         * `DefaultPriority` if the input is invalid. Creates the stream via `cudaStreamCreateWithPriority` with
+         * the provided raw flags and (corrected) priority. If `cudaStreamCreateWithPriority` fails (returns a
+         * non-cudaSuccess status), a `cuweaver::cudaError` is thrown with contextual error information.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaStreamCreateWithPriority` fails to create the CUDA stream.
+         */
         explicit cudaStream(cudaStreamFlags_t flags, cudaStreamPriority_t priority = DefaultPriority);
 
         /**

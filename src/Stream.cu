@@ -1,4 +1,5 @@
 #include <cuweaver/Stream.cuh>
+#include <cuweaver_utils/ErrorCheck.cuh>
 
 namespace cuweaver {
     int cudaStream::getLeastPriority() noexcept {
@@ -20,19 +21,19 @@ namespace cuweaver {
     cudaStream::cudaStream() : stream(nullptr),
                                flags(static_cast<cudaStreamFlags_t>(cudaStreamFlags::Default)),
                                priority(DefaultPriority) {
-        cudaStreamCreateWithPriority(&stream, flags, priority);
+        CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, flags, priority));
     }
 
     cudaStream::cudaStream(cudaStreamFlags flags, const cudaStreamPriority_t priority)  : stream(nullptr),
     flags(static_cast<cudaStreamFlags_t>(flags)),
     priority(isPriorityValid(priority) ? priority : DefaultPriority) {
-        cudaStreamCreateWithPriority(&stream, this->flags, this->priority);
+        CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, this->flags, this->priority));
     }
 
     cudaStream::cudaStream(const cudaStreamFlags_t flags, const cudaStreamPriority_t priority) : stream(nullptr),
     flags(flags),
     priority(isPriorityValid(priority) ? priority : DefaultPriority) {
-        cudaStreamCreateWithPriority(&stream, this->flags, this->priority);
+        CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, this->flags, this->priority));
     }
 
     cudaStream::cudaStream(cudaStream_t stream) : stream(stream),
