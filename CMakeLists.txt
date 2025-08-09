@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 project(CuWeaver VERSION 0.1.0 LANGUAGES CUDA CXX)
 
-option(CUWEAVER_BUILD_TESTS "Build tests" OFF)
-option(CUWEAVER_BUILD_EXAMPLES "Build examples" OFF)
 option(CUWEAVER_ENABLE_WARNINGS "Enable extra warnings" OFF)
 option(CUWEAVER_USE_CUDA_RUNTIME "Link against CUDA Runtime (cudart). OFF means Driver API only" ON)
 
@@ -34,16 +32,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_subdirectory(src)
 
-if(CUWEAVER_BUILD_EXAMPLES)
-    add_subdirectory(examples)
+
+add_subdirectory(examples)
+
+
+
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()
 
-if(CUWEAVER_BUILD_TESTS)
-    include(CTest)
-    if(BUILD_TESTING)
-        add_subdirectory(tests)
-    endif()
-endif()
 
 include(CMakePackageConfigHelpers)
 
