@@ -34,11 +34,9 @@ cmake .. -DBUILD_TESTING=ON
 
 # Build the library and tests
 cmake --build .
-````
+```
 
-The `BUILD_TESTING` option is OFF by default. Enabling it adds the  
-`tests/` directory to the build and links the necessary test  
-frameworks.
+The `BUILD_TESTING` option is OFF by default. Enabling it adds the `tests/` directory to the build and links the necessary test frameworks.
 
 ## Running Tests
 
@@ -62,16 +60,14 @@ Some useful `ctest` options:
 - `ctest --output-on-failure` – show output only for tests that fail.
 
 
-Tests that require a CUDA device will skip automatically when no GPU is  
-available or when the code is not compiled with CUDA support. Skipped  
-tests are reported but do not cause a failure.
+Tests that require a CUDA device will skip automatically when no GPU is available or when the code is not compiled with CUDA support. 
+Skipped tests are reported but do not cause a failure.
 
 ## Writing New Tests
 
-Contributors adding new features or fixing bugs must add or update  
-unit tests accordingly. Tests are written using **Google Test** and  
-located in the `tests/` directory. Follow these guidelines when  
-creating tests:
+Contributors adding new features or fixing bugs must add or update unit tests accordingly. 
+Tests are written using **Google Test** and located in the `tests/` directory. 
+Follow these guidelines when creating tests:
 
 1. **Use descriptive test names.** Test cases follow the format  
    `TEST(SuiteName, TestName)`. The suite name should describe the  
@@ -113,10 +109,8 @@ creating tests:
 
 ## Continuous Integration (CI)
 
-The maintainers may configure CI to automatically run tests on pull  
-requests. Passing tests locally before opening a pull request ensures  
-that CI runs smoothly and helps reviewers focus on the content of your  
-changes rather than fixing build issues.
+The maintainers may configure CI to automatically run tests on pull requests. 
+Passing tests locally before opening a pull request ensures that CI runs smoothly and helps reviewers focus on the content of your changes rather than fixing build issues.
 
 ## Troubleshooting
 
@@ -133,5 +127,4 @@ changes rather than fixing build issues.
   synchronization issues.
 
 
-By following these testing practices, you help maintain the quality  
-and stability of CuWeaver while enabling a robust development workflow.
+By following these testing practices, you help maintain the quality and stability of CuWeaver while enabling a robust development workflow.
