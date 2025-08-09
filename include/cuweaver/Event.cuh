@@ -39,7 +39,10 @@ namespace cuweaver {
          * @brief Constructs a CUDA event with default flags.
          *
          * @details Initializes the underlying CUDA event handle to `nullptr`, sets flags to `cudaEventFlags::Default`,
-         * then creates the event via `cudaEventCreate` using default configuration.
+         * then creates the event via `cudaEventCreateWithFlags` using default configuration. If `cudaEventCreateWithFlags` fails
+         * (returns a non-cudaSuccess status), a `cuweaver::cudaError` is thrown with contextual error information.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaEventCreateWithFlags` fails to create the CUDA event.
          */
         cudaEvent();
 
@@ -49,7 +52,9 @@ namespace cuweaver {
          * @param[in] flags Type-safe configuration flags from the `cudaEventFlags` enum.
          *
          * @details Initializes the event handle to `nullptr`, converts the enum flags to the native `cudaEventFlags_t` type,
-         * then creates the event via `cudaEventCreate` with the provided flags.
+         * then creates the event via `cudaEventCreateWithFlags` with the provided flags.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaEventCreateWithFlags` fails to create the CUDA event.
          */
         explicit cudaEvent(cudaEventFlags flags);
 
@@ -59,7 +64,9 @@ namespace cuweaver {
          * @param[in] flags Raw configuration flags compatible with CUDA's native `cudaEventFlags` type.
          *
          * @details Initializes the event handle to `nullptr`, uses the provided raw flags value,
-         * then creates the event via `cudaEventCreate` with the given flags.
+         * then creates the event via `cudaEventCreateWithFlags` with the given flags.
+         *
+         * @throws cuweaver::cudaError Thrown if `cudaEventCreateWithFlags` fails to create the CUDA event.
          */
         explicit cudaEvent(cudaEventFlags_t flags);
 

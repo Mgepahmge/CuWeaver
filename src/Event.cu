@@ -1,19 +1,21 @@
 #include <cuweaver/Event.cuh>
+#include <cuweaver_utils/ErrorCheck.cuh>
 
 namespace cuweaver {
     cudaEvent::cudaEvent() : event(nullptr), flags(static_cast<cudaEventFlags_t>(cudaEventFlags::Default)) {
-        cudaEventCreate(&event, static_cast<cudaEventFlags_t>(cudaEventFlags::Default));
+        CUW_THROW_IF_ERROR(cudaEventCreateWithFlags(&event, static_cast<cudaEventFlags_t>(cudaEventFlags::Default)));;
     }
 
     cudaEvent::cudaEvent(cudaEventFlags flags) : event(nullptr), flags(static_cast<cudaEventFlags_t>(flags)) {
-        cudaEventCreate(&event, static_cast<cudaEventFlags_t>(flags));
+        CUW_THROW_IF_ERROR(cudaEventCreateWithFlags(&event, static_cast<cudaEventFlags_t>(flags)));
     }
 
     cudaEvent::cudaEvent(const cudaEventFlags_t flags) : event(nullptr), flags(flags) {
-        cudaEventCreate(&event, flags);
+        CUW_THROW_IF_ERROR(cudaEventCreateWithFlags(&event, flags));
     }
 
-    cudaEvent::cudaEvent(cudaEvent_t event) : event(event), flags(static_cast<cudaEventFlags_t>(cudaEventFlags::Default)) {
+    cudaEvent::cudaEvent(cudaEvent_t event) : event(event),
+                                              flags(static_cast<cudaEventFlags_t>(cudaEventFlags::Default)) {
     }
 
     cudaEvent::cudaEvent(cudaEvent&& other) noexcept : event(other.event), flags(other.flags) {
