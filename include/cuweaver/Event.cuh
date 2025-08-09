@@ -1,5 +1,5 @@
 /**
-* @file cuweaver_event.cuh
+ * @file Event.cuh
  * @author Mgepahmge (https://github.com/Mgepahmge)
  * @brief RAII wrapper for CUDA events.
  *

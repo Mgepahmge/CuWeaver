@@ -1,5 +1,5 @@
 /**
-* @file cuweaver_stream.cuh
+ * @file Stream.cuh
  * @author Mgepahmge (https://github.com/Mgepahmge)
  * @brief Declares the cuweaver::cudaStream class for RAII management of CUDA streams.
  *
