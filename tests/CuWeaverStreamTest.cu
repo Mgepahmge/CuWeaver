@@ -99,7 +99,7 @@ TEST(CuWeaverCudaStream, AdoptExistingNativeHandleConstructor) {
     cudaStream_t raw = nullptr;
     ASSERT_EQ(cudaStreamCreateWithPriority(&raw,
               static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking),
-              cudaStream::DefaultPriority), cudaSuccess);
+              cudaStream::getGreatestPriority()), cudaSuccess);
     ASSERT_NE(raw, nullptr);
 
     {
@@ -107,8 +107,11 @@ TEST(CuWeaverCudaStream, AdoptExistingNativeHandleConstructor) {
         EXPECT_TRUE(s.isValid());
         EXPECT_EQ(s.nativeHandle(), raw);
 
-        EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cuweaver::cudaStreamFlags::Default));
-        EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
+        EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking));
+        EXPECT_EQ(s.getPriority(), cudaStream::getGreatestPriority());
+        cudaStream::cudaStreamId_t id;
+        EXPECT_EQ(cudaStreamGetId(raw, &id), cudaSuccess);
+        EXPECT_EQ(s.getId(), id);
 
         launchAndSync(s.nativeHandle());
     }
