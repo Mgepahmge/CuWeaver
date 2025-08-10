@@ -47,4 +47,21 @@ namespace cuweaver {
             throw;
         }
     }
+
+    void streamSynchronize(const cudaStream& stream) {
+        CUW_THROW_IF_ERROR(cudaStreamSynchronize(stream.nativeHandle()));
+    }
+
+    void streamAddCallback(const cudaStream& stream, cudaStreamCallback_t callback, void* userData,
+                           const unsigned int flags) {
+        if (flags) {
+            throw std::invalid_argument("Use streamAddCallback with flags set to 0.");
+        }
+        CUW_THROW_IF_ERROR(cudaStreamAddCallback(stream.nativeHandle(), callback, userData, flags));
+    }
+
+    void streamWaitEvent(const cudaStream& stream, const cudaEvent& event, cudaEventWait flags) {
+        CUW_THROW_IF_ERROR(
+            cudaStreamWaitEvent(stream.nativeHandle(), event.nativeHandle(), static_cast<unsigned int>(flags)));
+    }
 }

@@ -132,6 +132,70 @@ namespace cuweaver {
      * @throws cudaError Thrown if `cudaStreamQuery` returns an error other than `cudaErrorNotReady`.
      */
     bool streamQuery(const cudaStream& stream);
+
+    /**
+     * @brief Synchronizes the underlying CUDA stream of a `cudaStream` wrapper.
+     *
+     * @details Blocks the calling thread until all operations in the CUDA stream managed by `stream` (retrieved via
+     *          `stream.nativeHandle()`) have completed. Uses `cudaStreamSynchronize` to perform the synchronization.
+     *
+     * @param[in] stream Reference to the `cudaStream` wrapper whose underlying CUDA stream to synchronize.
+     *
+     * @throws cudaError Thrown if `cudaStreamSynchronize` returns a CUDA runtime error (e.g., invalid stream handle,
+     *                   device unreachable, or synchronization failure).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void streamSynchronize(const cudaStream& stream);
+
+    /**
+     * @brief Adds a host callback to the CUDA stream managed by a `cudaStream` wrapper, enforcing flags are zero.
+     *
+     * @details First validates that `flags` is zero (throws `std::invalid_argument` if not). Then registers `callback`
+     *          with the underlying CUDA stream of `stream` using `cudaStreamAddCallback`. The callback will execute
+     *          on the host **after all preceding operations** in the stream complete.
+     *
+     *          Important notes about `flags`:
+     *          - Its default value (in the function declaration) is **0**.
+     *          - It is **reserved for future CUDA runtime API use** and **must be set to 0**. This function explicitly
+     *            enforces this requirement with a pre-check.
+     *
+     * @param[in] stream `cudaStream` wrapper whose underlying CUDA stream will execute the callback.
+     * @param[in] callback Pointer to the host callback function to invoke. Must follow the `cudaStreamCallback_t`
+     *                     signature: `void (*)(cudaStream_t, cudaError_t, void*)`.
+     * @param[in] userData User-defined data pointer passed unchanged to the callback when it executes.
+     * @param[in] flags Reserved flag parameter (**must be 0**). Defaults to 0 in the function declaration.
+     *
+     * @throws std::invalid_argument Thrown if `flags` is not zero.
+     * @throws cudaError Thrown if `cudaStreamAddCallback` fails (e.g., invalid stream handle, null callback,
+     *                   or CUDA runtime error).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void streamAddCallback(const cudaStream& stream, cudaStreamCallback_t callback, void* userData,
+                           unsigned int flags = 0);
+
+    /**
+     * @brief Makes a CUDA stream wait for a CUDA event to complete.
+     *
+     * @details Pauses execution of the underlying CUDA stream of `stream` until all operations preceding `event` (in its
+     *          associated stream) have finished. The `flags` parameter configures wait behavior using options from the
+     *          `cudaEventWait` enumeration.
+     *
+     * @param[in] stream `cudaStream` wrapper whose underlying stream will wait for the event.
+     * @param[in] event `cudaEvent` wrapper representing the event to wait for (must have completed all prior operations).
+     * @param[in] flags Flags defining wait behavior (from the `cudaEventWait` enumeration; must be a valid enumerator).
+     *
+     * @throws cudaError Thrown if `cudaStreamWaitEvent` fails (e.g., invalid stream/event handle, invalid `flags`,
+     *                   or CUDA runtime error).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void streamWaitEvent(const cudaStream& stream, const cudaEvent& event,
+                         cudaEventWait flags = cudaEventWait::Default);
 }
 
 #endif

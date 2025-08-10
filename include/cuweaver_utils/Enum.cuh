@@ -44,6 +44,17 @@ namespace cuweaver {
         Default = 0x00,
         External = 0x01,
     };
+
+    /**
+    * @enum cudaEventWait
+    * @brief Flags defining CUDA event wait behavior options.
+    *
+    * @details Specifies configuration options for operations that wait on CUDA events (e.g., stream waits for an event).
+    */
+    enum class cudaEventWait {
+        Default = 0x00,
+        External = 0x01,
+    };
 }
 
 #endif //CUWEAVER_ENUM_CUH
