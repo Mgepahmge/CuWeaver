@@ -197,14 +197,24 @@ namespace cuweaver {
         [[nodiscard]] cudaStreamId_t getId() const noexcept;
 
         /**
-         * @brief Resets the stream to manage a new handle (or nullptr).
+         * @brief Resets the `cudaStream` wrapper with a new CUDA stream handle and updates its configuration attributes.
          *
-         * @details Destroys the current stream (if valid) and takes ownership of `stream`. If `stream` is
-         * `nullptr`, the instance becomes invalid until a new handle is assigned.
+         * @details First destroys the currently managed CUDA stream (if valid, via `resetStream()`), takes ownership of
+         *          the provided `stream` handle, then synchronizes the wrapper's `id`, `priority`, and `flags` members
+         *          with the new stream's actual configuration by calling `updateAttributes()`. If `stream` is `nullptr`,
+         *          the instance becomes invalid until a valid handle is assigned.
          *
-         * @param[in] stream New CUDA stream handle to manage (defaults to `nullptr`).
+         * @param[in] stream New CUDA stream handle to manage (defaults to `nullptr`). If `nullptr`, subsequent operations
+         *                   on this instance may fail until a valid handle is provided.
+         *
+         * @throws cuweaver::cudaError Thrown if `updateAttributes()` fails to query the new stream's attributes (e.g.,
+         *                             invalid stream handle or CUDA runtime error during `cudaStreamGetId`,
+         *                             `cudaStreamGetPriority`, or `cudaStreamGetFlags` calls).
+         *
+         * @par Returns
+         *      Nothing.
          */
-        void reset(cudaStream_t stream = nullptr) noexcept;
+        void reset(cudaStream_t stream = nullptr);
 
         /**
          * @brief Checks if the instance manages a valid CUDA stream handle.
@@ -214,6 +224,42 @@ namespace cuweaver {
         [[nodiscard]] bool isValid() const noexcept;
 
     private:
+        /**
+         * @brief Updates the stream's attributes (ID, priority, flags) from the underlying CUDA stream.
+         *
+         * @details Synchronizes the wrapper class's `id`, `priority`, and `flags` member variables with the actual
+         *          attributes of the managed CUDA stream. This is done by invoking `cudaStreamGetId` to retrieve the stream's
+         *          unique identifier, `cudaStreamGetPriority` for the stream's priority value, and `cudaStreamGetFlags` for
+         *          the stream's configuration flags. This ensures the wrapper's state matches the current state of the
+         *          underlying stream.
+         *
+         * @par Parameters
+         *      None.
+         *
+         * @throws cuweaver::cudaError Thrown if any of the underlying CUDA API calls (`cudaStreamGetId`,
+         *                             `cudaStreamGetPriority`, or `cudaStreamGetFlags`) fails (e.g., invalid stream handle
+         *                             or CUDA runtime error).
+         *
+         * @par Returns
+         *      Nothing.
+         */
+        void updateAttributes();
+
+        /**
+         * @brief Resets the `cudaStream` wrapper with a new CUDA stream handle.
+         *
+         * @details Destroys the currently managed CUDA stream handle (if valid, as determined by `isValid()`)
+         *          using `cudaStreamDestroy`, then takes ownership of the provided new `cudaStream_t` handle.
+         *          This method is `noexcept` and will never throw exceptions.
+         *
+         * @param[in] stream New CUDA stream handle to manage. If `nullptr` or an invalid handle is provided,
+         *                   subsequent operations on this `cudaStream` instance may fail.
+         *
+         * @par Returns
+         *      Nothing.
+         */
+        void resetStream(cudaStream_t stream) noexcept;
+
         cudaStream_t stream; //!< Underlying CUDA stream handle managed by this wrapper.
         cudaStreamFlags_t flags; //!< Configuration flags for the CUDA stream (raw unsigned integer).
         cudaStreamPriority_t priority; //!< Priority value assigned to the CUDA stream.
