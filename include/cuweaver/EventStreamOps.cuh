@@ -18,7 +18,7 @@ namespace cuweaver {
      * @warning The function **requires both `start` and `end` events to have completed execution**
      *          (i.e., their underlying CUDA event handles must have been recorded and reached a
      *          completed state via CUDA operations like `cudaEventRecord` and synchronization).
-     *          If either event is incomplete, invalid, or未被正确记录, `cudaEventElapsedTime` will fail,
+     *          If either event is incomplete, invalid, `cudaEventElapsedTime` will fail,
      *          and a `cuweaver::cudaError` will be thrown.
      *
      * @param[in] start CUDA event representing the **start** of the time interval (must be completed).
