@@ -11,6 +11,7 @@
 #define CUWEAVER_STREAM_CUH
 
 #ifdef __CUDACC__
+#include <cuweaver_utils/Enum.cuh>
 
 namespace cuweaver {
 
@@ -36,18 +37,6 @@ namespace cuweaver {
         using cudaStreamPriority_t = int;
 
         constexpr static cudaStreamPriority_t DefaultPriority = 0;
-
-        /**
-         * @enum cuweaver::cudaStream::cudaStreamFlags
-         * @brief Type-safe enumeration of CUDA stream configuration flags.
-         *
-         * @details Defines standard bitmask flags for configuring CUDA stream behavior. Values align with
-         * CUDA's native stream flag constants and enable type-safe initialization of `cudaStream` instances.
-         */
-        enum class cudaStreamFlags {
-            Default = 0x00,
-            NonBlocking = 0x01,
-        };
 
         /**
          * @brief Gets the least (highest numerical value) valid CUDA stream priority for the current device.

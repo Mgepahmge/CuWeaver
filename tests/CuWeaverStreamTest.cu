@@ -49,7 +49,7 @@ TEST(CuWeaverCudaStream, DefaultConstructorCreatesValidStream) {
     cudaStream s;
     EXPECT_TRUE(s.isValid());
     EXPECT_NE(s.nativeHandle(), nullptr);
-    EXPECT_EQ(s.getFlags(), static_cast<cudaStream::cudaStreamFlags_t>(cudaStream::cudaStreamFlags::Default));
+    EXPECT_EQ(s.getFlags(), static_cast<cudaStream::cudaStreamFlags_t>(cuweaver::cudaStreamFlags::Default));
     EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
 
     launchAndSync(s.nativeHandle());
@@ -63,10 +63,10 @@ TEST(CuWeaverCudaStream, EnumFlagsAndPriorityConstructor) {
 
     const int hi = cudaStream::getGreatestPriority();
 
-    cudaStream s{cudaStream::cudaStreamFlags::NonBlocking, hi};
+    cudaStream s{cuweaver::cudaStreamFlags::NonBlocking, hi};
     EXPECT_TRUE(s.isValid());
     EXPECT_NE(s.nativeHandle(), nullptr);
-    EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cudaStream::cudaStreamFlags::NonBlocking));
+    EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking));
     EXPECT_EQ(s.getPriority(), hi);
 
     launchAndSync(s.nativeHandle());
@@ -79,7 +79,7 @@ TEST(CuWeaverCudaStream, RawFlagsAndPriorityConstructorWithInvalidPriorityFallsB
     if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
 
     const int invalidPriority = cudaStream::getGreatestPriority() - 10;
-    unsigned int rawFlags = static_cast<unsigned int>(cudaStream::cudaStreamFlags::NonBlocking);
+    unsigned int rawFlags = static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking);
 
     cudaStream s{rawFlags, invalidPriority};
     EXPECT_TRUE(s.isValid());
@@ -98,7 +98,7 @@ TEST(CuWeaverCudaStream, AdoptExistingNativeHandleConstructor) {
 
     cudaStream_t raw = nullptr;
     ASSERT_EQ(cudaStreamCreateWithPriority(&raw,
-              static_cast<unsigned int>(cudaStream::cudaStreamFlags::NonBlocking),
+              static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking),
               cudaStream::DefaultPriority), cudaSuccess);
     ASSERT_NE(raw, nullptr);
 
@@ -107,7 +107,7 @@ TEST(CuWeaverCudaStream, AdoptExistingNativeHandleConstructor) {
         EXPECT_TRUE(s.isValid());
         EXPECT_EQ(s.nativeHandle(), raw);
 
-        EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cudaStream::cudaStreamFlags::Default));
+        EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cuweaver::cudaStreamFlags::Default));
         EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
 
         launchAndSync(s.nativeHandle());
@@ -121,7 +121,7 @@ TEST(CuWeaverCudaStream, MoveConstructorTransfersOwnership) {
 #endif
     if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
 
-    cudaStream s1{cudaStream::cudaStreamFlags::NonBlocking, cudaStream::DefaultPriority};
+    cudaStream s1{cuweaver::cudaStreamFlags::NonBlocking, cudaStream::DefaultPriority};
     ASSERT_TRUE(s1.isValid());
     auto h = s1.nativeHandle();
 
@@ -143,7 +143,7 @@ TEST(CuWeaverCudaStream, MoveAssignmentTransfersOwnership) {
     ASSERT_TRUE(src.isValid());
     auto hsrc = src.nativeHandle();
 
-    cudaStream dst{cudaStream::cudaStreamFlags::NonBlocking, cudaStream::DefaultPriority};
+    cudaStream dst{cuweaver::cudaStreamFlags::NonBlocking, cudaStream::DefaultPriority};
     ASSERT_TRUE(dst.isValid());
 
     dst = std::move(src);
@@ -166,7 +166,7 @@ TEST(CuWeaverCudaStream, ResetToNewHandleAndNullptr) {
 
     cudaStream_t nraw = nullptr;
     ASSERT_EQ(cudaStreamCreateWithPriority(&nraw,
-              static_cast<unsigned int>(cudaStream::cudaStreamFlags::Default),
+              static_cast<unsigned int>(cuweaver::cudaStreamFlags::Default),
               cudaStream::DefaultPriority), cudaSuccess);
     ASSERT_NE(nraw, nullptr);
 
@@ -192,7 +192,7 @@ TEST(CuWeaverCudaStream, DefaultStreamReturnsValidDefaultStream) {
 
     EXPECT_FALSE(s.isValid());
     EXPECT_EQ(s.nativeHandle(), static_cast<cudaStream_t>(nullptr));
-    EXPECT_EQ(s.getFlags(), static_cast<cudaStream::cudaStreamFlags_t>(cudaStream::cudaStreamFlags::Default));
+    EXPECT_EQ(s.getFlags(), static_cast<cudaStream::cudaStreamFlags_t>(cuweaver::cudaStreamFlags::Default));
     EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
 
     NopKernel<<<1, 1, 0, s.nativeHandle()>>>();

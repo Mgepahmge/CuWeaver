@@ -19,6 +19,18 @@ namespace cuweaver {
         DisableTiming = 0x02,
         Interprocess = 0x04,
     };
+
+    /**
+     * @enum cudaStreamFlags
+     * @brief Type-safe enumeration of CUDA stream configuration flags.
+     *
+     * @details Defines standard bitmask flags for configuring CUDA stream behavior. Values align with
+     * CUDA's native stream flag constants and enable type-safe initialization of `cudaStream` instances.
+     */
+    enum class cudaStreamFlags {
+        Default = 0x00,
+        NonBlocking = 0x01,
+    };
 }
 
 #endif //CUWEAVER_ENUM_CUH
