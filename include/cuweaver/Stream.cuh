@@ -14,7 +14,6 @@
 #include <cuweaver_utils/Enum.cuh>
 
 namespace cuweaver {
-
     /**
      * @class cuweaver::cudaStream [cuweaver_stream.cuh]
      * @brief RAII wrapper for CUDA streams to manage lifecycle and configuration.
@@ -25,8 +24,8 @@ namespace cuweaver {
      * `cudaStreamFlags` enumeration, and static methods to retrieve CUDA stream priority bounds.
      * Tracks the underlying stream handle, configuration flags, and priority for inspection.
      *
-     * Type aliases `cudaStreamFlags_t` (raw unsigned integer for stream flags) and `cudaStreamPriority_t`
-     * (integer for stream priority values) clarify parameter types. The `cudaStreamFlags` enum defines
+     * Type aliases `cudaStreamFlags_t` (raw unsigned integer for stream flags), `cudaStreamPriority_t`
+     * (integer for stream priority values) and `cudaStreamId_t` (unsigned long long for stream IDs) clarify parameter types. The `cudaStreamFlags` enum defines
      * standard stream options: `Default` (0x00) for default behavior and `NonBlocking` (0x01) for
      * non-blocking stream synchronization. A static `DefaultPriority` constant sets the default stream
      * priority to 0.
@@ -35,6 +34,7 @@ namespace cuweaver {
     public:
         using cudaStreamFlags_t = unsigned int;
         using cudaStreamPriority_t = int;
+        using cudaStreamId_t = unsigned long long;
 
         constexpr static cudaStreamPriority_t DefaultPriority = 0;
 
@@ -119,12 +119,16 @@ namespace cuweaver {
         explicit cudaStream(cudaStreamFlags_t flags, cudaStreamPriority_t priority = DefaultPriority);
 
         /**
-         * @brief Constructs a `cudaStream` wrapper around an existing CUDA stream handle.
+         * @brief Constructs a `cudaStream` wrapper around an existing CUDA stream handle and initializes its configuration.
          *
-         * @details Takes ownership of the provided `cudaStream_t` handle. The `flags` and `priority` members
-         * are initialized to default values (the existing stream's configuration is not queried).
+         * @details Takes ownership of the provided `cudaStream_t` handle. Queries the stream's unique identifier, priority,
+         *          and flags using `cudaStreamGetId`, `cudaStreamGetPriority`, and `cudaStreamGetFlags` respectively,
+         *          and initializes the corresponding `id`, `priority`, and `flags` member variables with the retrieved values.
          *
          * @param[in] stream Existing CUDA stream handle to manage.
+         *
+         * @throws cuweaver::cudaError Thrown if any of the underlying `cudaStreamGetId`, `cudaStreamGetPriority`,
+         *                             or `cudaStreamGetFlags` calls fail (e.g., invalid stream handle or CUDA runtime error).
          */
         explicit cudaStream(cudaStream_t stream);
 
@@ -183,6 +187,16 @@ namespace cuweaver {
         [[nodiscard]] cudaStreamPriority_t getPriority() const noexcept;
 
         /**
+         * @brief Gets the unique identifier of the CUDA stream.
+         *
+         * @details Returns the internal unique identifier associated with this CUDA stream instance. This method
+         *          is `const` (it does not modify the stream object) and `noexcept` (it will never throw exceptions).
+         *
+         * @return The unique identifier of the stream, of type `cudaStream::cudaStreamId_t`.
+         */
+        [[nodiscard]] cudaStreamId_t getId() const noexcept;
+
+        /**
          * @brief Resets the stream to manage a new handle (or nullptr).
          *
          * @details Destroys the current stream (if valid) and takes ownership of `stream`. If `stream` is
@@ -203,8 +217,8 @@ namespace cuweaver {
         cudaStream_t stream; //!< Underlying CUDA stream handle managed by this wrapper.
         cudaStreamFlags_t flags; //!< Configuration flags for the CUDA stream (raw unsigned integer).
         cudaStreamPriority_t priority; //!< Priority value assigned to the CUDA stream.
+        cudaStreamId_t id; //!< Unique identifier for the CUDA stream.
     };
-
 }
 
 #endif

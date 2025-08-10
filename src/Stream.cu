@@ -24,30 +24,41 @@ namespace cuweaver {
 
     cudaStream::cudaStream() : stream(nullptr),
                                flags(static_cast<cudaStreamFlags_t>(cudaStreamFlags::Default)),
-                               priority(DefaultPriority) {
+                               priority(DefaultPriority),
+                               id(0) {
         CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, flags, priority));
+        CUW_THROW_IF_ERROR(cudaStreamGetId(stream, &id));
     }
 
-    cudaStream::cudaStream(cudaStreamFlags flags, const cudaStreamPriority_t priority)  : stream(nullptr),
-    flags(static_cast<cudaStreamFlags_t>(flags)),
-    priority(isPriorityValid(priority) ? priority : DefaultPriority) {
+    cudaStream::cudaStream(cudaStreamFlags flags, const cudaStreamPriority_t priority) : stream(nullptr),
+        flags(static_cast<cudaStreamFlags_t>(flags)),
+        priority(isPriorityValid(priority) ? priority : DefaultPriority),
+        id(0) {
         CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, this->flags, this->priority));
+        CUW_THROW_IF_ERROR(cudaStreamGetId(stream, &id));
     }
 
     cudaStream::cudaStream(const cudaStreamFlags_t flags, const cudaStreamPriority_t priority) : stream(nullptr),
-    flags(flags),
-    priority(isPriorityValid(priority) ? priority : DefaultPriority) {
+        flags(flags),
+        priority(isPriorityValid(priority) ? priority : DefaultPriority),
+        id(0) {
         CUW_THROW_IF_ERROR(cudaStreamCreateWithPriority(&stream, this->flags, this->priority));
+        CUW_THROW_IF_ERROR(cudaStreamGetId(stream, &id));
     }
 
     cudaStream::cudaStream(cudaStream_t stream) : stream(stream),
-    flags(static_cast<cudaStreamFlags_t>(cudaStreamFlags::Default)),
-    priority(DefaultPriority) {
+                                                  flags(static_cast<cudaStreamFlags_t>(cudaStreamFlags::Default)),
+                                                  priority(DefaultPriority),
+                                                  id(0) {
+        CUW_THROW_IF_ERROR(cudaStreamGetId(stream, &id));
+        CUW_THROW_IF_ERROR(cudaStreamGetPriority(stream, &priority));
+        CUW_THROW_IF_ERROR(cudaStreamGetFlags(stream, &flags));
     }
 
     cudaStream::cudaStream(cudaStream&& other) noexcept : stream(other.stream),
-    flags(other.flags),
-    priority(other.priority) {
+                                                          flags(other.flags),
+                                                          priority(other.priority),
+                                                          id(other.id) {
         other.stream = nullptr;
     }
 
@@ -56,6 +67,7 @@ namespace cuweaver {
             this->reset(other.stream);
             flags = other.flags;
             priority = other.priority;
+            id = other.id;
             other.stream = nullptr;
         }
         return *this;
@@ -77,6 +89,10 @@ namespace cuweaver {
 
     cudaStream::cudaStreamPriority_t cudaStream::getPriority() const noexcept {
         return priority;
+    }
+
+    cudaStream::cudaStreamId_t cudaStream::getId() const noexcept {
+        return id;
     }
 
     void cudaStream::reset(cudaStream_t stream) noexcept {
