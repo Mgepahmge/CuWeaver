@@ -141,3 +141,59 @@ TEST(CuWeaverCudaStream, StreamQueryReportsPendingAndCompleted) {
     ASSERT_NO_THROW({ done = cuweaver::streamQuery(stream); });
     EXPECT_TRUE(done);
 }
+
+TEST(CuWeaverCudaStream, StreamSynchronize) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+    cuweaver::cudaStream stream;
+
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1, 0, stream.nativeHandle()>>>(kIterations);
+    ASSERT_FALSE(cuweaver::streamQuery(stream));
+    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream));
+    ASSERT_TRUE(cuweaver::streamQuery(stream));
+}
+
+TEST(CuWeaverCudaStream, StreamAddCallback) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+    cuweaver::cudaStream stream;
+
+    ASSERT_THROW(cuweaver::streamAddCallback(stream, nullptr, nullptr, 1), std::invalid_argument);
+
+    int value = 0;
+    auto callback = [](cudaStream_t, cudaError_t, void* userData) {
+        int* value = static_cast<int*>(userData);
+        *value = 42;
+    };
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1, 0, stream.nativeHandle()>>>(kIterations);
+    ASSERT_NO_THROW(cuweaver::streamAddCallback(stream, callback, &value, 0));
+    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream));
+    EXPECT_EQ(value, 42);
+}
+
+TEST(CuWeaverCudaStream, StreamWaitEvent) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+
+    cuweaver::cudaStream stream1;
+    cuweaver::cudaStream stream2;
+    cuweaver::cudaEvent event1;
+    cuweaver::cudaEvent event2;
+
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1, 0, stream1.nativeHandle()>>>(kIterations);
+    ASSERT_NO_THROW(cuweaver::eventRecord(event1, stream1));
+    ASSERT_NO_THROW(cuweaver::streamWaitEvent(stream2, event1, cuweaver::cudaEventWait::Default));
+    ASSERT_NO_THROW(cuweaver::eventRecord(event2, stream2));
+    ASSERT_FALSE(cuweaver::eventQuery(event2));
+    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream1));
+    ASSERT_TRUE(cuweaver::eventQuery(event2));
+}
