@@ -182,3 +182,21 @@ TEST(CuWeaverCudaStream, ResetToNewHandleAndNullptr) {
     (void)old;
 }
 
+TEST(CuWeaverCudaStream, DefaultStreamReturnsValidDefaultStream) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+
+    cudaStream s = cudaStream::defaultStream();
+
+    EXPECT_FALSE(s.isValid());
+    EXPECT_EQ(s.nativeHandle(), static_cast<cudaStream_t>(nullptr));
+    EXPECT_EQ(s.getFlags(), static_cast<cudaStream::cudaStreamFlags_t>(cudaStream::cudaStreamFlags::Default));
+    EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
+
+    NopKernel<<<1, 1, 0, s.nativeHandle()>>>();
+    ASSERT_EQ(cudaGetLastError(), cudaSuccess);
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+}
+
