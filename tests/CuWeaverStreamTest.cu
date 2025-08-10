@@ -169,13 +169,15 @@ TEST(CuWeaverCudaStream, ResetToNewHandleAndNullptr) {
 
     cudaStream_t nraw = nullptr;
     ASSERT_EQ(cudaStreamCreateWithPriority(&nraw,
-              static_cast<unsigned int>(cuweaver::cudaStreamFlags::Default),
+              static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking),
               cudaStream::DefaultPriority), cudaSuccess);
     ASSERT_NE(nraw, nullptr);
 
     s.reset(nraw);
     EXPECT_TRUE(s.isValid());
     EXPECT_EQ(s.nativeHandle(), nraw);
+    EXPECT_EQ(s.getFlags(), static_cast<unsigned int>(cuweaver::cudaStreamFlags::NonBlocking));
+    EXPECT_EQ(s.getPriority(), cudaStream::DefaultPriority);
     launchAndSync(s.nativeHandle());
 
     s.reset(nullptr);
