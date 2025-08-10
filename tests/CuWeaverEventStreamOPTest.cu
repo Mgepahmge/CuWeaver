@@ -61,3 +61,24 @@ TEST(CuWeaverCudaEvent, EventQueryReportsPendingAndCompleted) {
     ASSERT_NO_THROW({ done = eventQuery(ev); });
     EXPECT_TRUE(done);
 }
+
+TEST(CuWeaverCudaEvent, EventRecordOnStream) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+
+    cuweaver::cudaEvent start;
+    cuweaver::cudaEvent end;
+
+    ASSERT_NO_THROW(cuweaver::eventRecord(start));
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1>>>(kIterations);
+    ASSERT_NO_THROW(cuweaver::eventRecord(end));
+
+    ASSERT_EQ(cudaEventSynchronize(end.nativeHandle()), cudaSuccess);
+
+    float ms = 0.0f;
+    ASSERT_NO_THROW({ ms = eventElapsedTime(start, end); });
+    EXPECT_NE(ms, 0.0f);
+}
