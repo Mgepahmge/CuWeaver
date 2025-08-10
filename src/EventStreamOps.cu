@@ -20,4 +20,8 @@ namespace cuweaver {
             throw;
         }
     }
+
+    void eventRecord(const cudaEvent& event, const cudaStream& stream) {
+        CUW_THROW_IF_ERROR(cudaEventRecord(event.nativeHandle(), stream.nativeHandle()));
+    }
 }

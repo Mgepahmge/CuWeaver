@@ -48,6 +48,26 @@ namespace cuweaver {
      */
     bool eventQuery(const cudaEvent& event);
 
+    /**
+     * @brief Records a CUDA event into a CUDA stream.
+     *
+     * @details Uses the CUDA runtime API `cudaEventRecord` to schedule the specified `event` to be recorded
+     *          in the given `stream`. The event will transition to the completed state once all operations
+     *          in the stream that were enqueued before this call have finished executing. This function
+     *          is used to mark synchronization or timing points in a stream for subsequent operations
+     *          (e.g., timing with `EventElapsedTime` or polling with `EventQuery`).
+     *
+     * @param[in] event CUDA event to record into the stream.
+     * @param[in] stream CUDA stream to which the event will be recorded.
+     *
+     * @throws cuweaver::cudaError Thrown if the underlying `cudaEventRecord` call fails (e.g., invalid
+     *                             event handle, invalid stream handle, or an error in the CUDA runtime).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void eventRecord(const cudaEvent& event, const cudaStream& stream = cudaStream::defaultStream());
+
 }
 
 #endif
