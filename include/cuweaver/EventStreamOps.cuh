@@ -1,3 +1,13 @@
+/**
+* @file EventStreamOps.cuh
+ * @author Mgepahmge (https://github.com/Mgepahmge)
+ * @brief Declarations for CUDA stream and event operation wrappers.
+ *
+ * @details This file provides type-safe encapsulations of CUDA Runtime API operations for streams and events.
+ *          It depends on `Event.cuh` (for the `cudaEvent` type) and `Stream.cuh` (for the `cudaStream` type).
+ *          Compilation is conditional on CUDA availability (`__CUDACC__`): if CUDA is not enabled, a warning is emitted
+ *          and the file contents are skipped.
+ */
 #ifndef CUWEAVER_EVENTSTREAMOPS_CUH
 #define CUWEAVER_EVENTSTREAMOPS_CUH
 
@@ -7,7 +17,6 @@
 #include "Stream.cuh"
 
 namespace cuweaver {
-
     /**
      * @brief Calculates the elapsed time between two CUDA events in milliseconds.
      *
@@ -68,6 +77,27 @@ namespace cuweaver {
      */
     void eventRecord(const cudaEvent& event, const cudaStream& stream = cudaStream::defaultStream());
 
+    /**
+     * @brief Records a CUDA event into a CUDA stream with specified flags.
+     *
+     * @details Uses the CUDA runtime API `cudaEventRecordWithFlags` to schedule the given `event` into the `stream`
+     *          with the provided `flags`. Unlike the flag-less `eventRecord` function, this variant allows
+     *          customization of event recording behavior (e.g., enabling external synchronization) via the `flags`
+     *          parameter. The event will transition to the completed state once all operations in the stream
+     *          enqueued before this call finish executing, and can be used for subsequent synchronization or timing.
+     *
+     * @param[in] event CUDA event to record into the stream.
+     * @param[in] stream CUDA stream to which the event will be recorded.
+     * @param[in] flags Flags that configure event recording behavior (from `cudaEventRecordFlags` enumeration).
+     *
+     * @throws cuweaver::cudaError Thrown if the underlying `cudaEventRecordWithFlags` call fails (e.g., invalid
+     *                             event handle, invalid stream handle, invalid flag value, or a CUDA runtime error).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void eventRecordWithFlags(const cudaEvent& event, const cudaStream& stream = cudaStream::defaultStream(),
+                              cudaEventRecordFlags flags = cudaEventRecordFlags::Default);
 }
 
 #endif

@@ -31,6 +31,19 @@ namespace cuweaver {
         Default = 0x00,
         NonBlocking = 0x01,
     };
+
+    /**
+     * @enum cuweaver::cudaEventRecordFlags
+     * @brief Type-safe flags for configuring CUDA event recording behavior.
+     *
+     * @details Maps to CUDA's native flags for `cudaEventRecordWithFlags`, controlling how an event is scheduled
+     *          into a CUDA stream. These flags adjust the event's compatibility with external systems
+     *          or synchronization requirements.
+     */
+    enum class cudaEventRecordFlags {
+        Default = 0x00,
+        External = 0x01,
+    };
 }
 
 #endif //CUWEAVER_ENUM_CUH
