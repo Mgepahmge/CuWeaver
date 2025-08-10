@@ -10,10 +10,11 @@
 #define CUWEAVER_EVENT_CUH
 
 #ifdef __CUDACC__
+#include <cuweaver_utils/Enum.cuh>
 
 namespace cuweaver {
     /**
-     * @class cuweaver::cudaEvent cuweaver_event.cuh
+     * @class cuweaver::cudaEvent
      * @brief RAII wrapper for CUDA events.
      *
      * @details Manages the lifecycle of a CUDA event (`cudaEvent_t`) using RAII (Resource Acquisition Is Initialization) semantics. Automatically creates the event on construction and destroys it on destruction to prevent resource leaks. Supports move semantics for safe ownership transfer, while copy semantics are disabled to avoid duplicate management of the same event. Provides a type-safe enumeration (`cudaEventFlags`) for configuring event behavior, aligned with CUDA's native event flag values.
@@ -21,19 +22,6 @@ namespace cuweaver {
     class cudaEvent {
     public:
         using cudaEventFlags_t = unsigned int;
-
-        /**
-         * @enum cudaEvent::cudaEventFlags
-         * @brief Type-safe flags for configuring CUDA event behavior.
-         *
-         * @details Maps to CUDA's native `cudaEventFlags` values, controlling synchronization, timing, and inter-process capabilities of the event.
-         */
-        enum class cudaEventFlags {
-            Default = 0x00,
-            BlockingSync = 0x01,
-            DisableTiming = 0x02,
-            Interprocess = 0x04,
-        };
 
         /**
          * @brief Constructs a CUDA event with default flags.

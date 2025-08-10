@@ -29,7 +29,7 @@ TEST(CuWeaverCudaEvent, DefaultConstructorCreatesValidEvent) {
     cudaEvent e; // 默认构造
     EXPECT_TRUE(e.isValid());
     EXPECT_NE(e.nativeHandle(), nullptr);
-    EXPECT_EQ(e.getFlags(), static_cast<cudaEvent::cudaEventFlags_t>(cudaEvent::cudaEventFlags::Default));
+    EXPECT_EQ(e.getFlags(), static_cast<cudaEvent::cudaEventFlags_t>(cuweaver::cudaEventFlags::Default));
 
     recordAndSync(e.nativeHandle());
 }
@@ -40,10 +40,10 @@ TEST(CuWeaverCudaEvent, EnumFlagsConstructorDisableTiming) {
 #endif
     if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
 
-    cudaEvent e{cudaEvent::cudaEventFlags::DisableTiming};
+    cudaEvent e{cuweaver::cudaEventFlags::DisableTiming};
     EXPECT_TRUE(e.isValid());
     EXPECT_NE(e.nativeHandle(), nullptr);
-    EXPECT_EQ(e.getFlags(), static_cast<unsigned int>(cudaEvent::cudaEventFlags::DisableTiming));
+    EXPECT_EQ(e.getFlags(), static_cast<unsigned int>(cuweaver::cudaEventFlags::DisableTiming));
 
     recordAndSync(e.nativeHandle());
 }
@@ -54,8 +54,8 @@ TEST(CuWeaverCudaEvent, RawFlagsConstructor) {
 #endif
     if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
 
-    unsigned int rawFlags = static_cast<unsigned int>(cudaEvent::cudaEventFlags::BlockingSync) |
-                            static_cast<unsigned int>(cudaEvent::cudaEventFlags::DisableTiming);
+    unsigned int rawFlags = static_cast<unsigned int>(cuweaver::cudaEventFlags::BlockingSync) |
+                            static_cast<unsigned int>(cuweaver::cudaEventFlags::DisableTiming);
     cudaEvent e{rawFlags};
     EXPECT_TRUE(e.isValid());
     EXPECT_NE(e.nativeHandle(), nullptr);
@@ -71,7 +71,7 @@ TEST(CuWeaverCudaEvent, AdoptExistingNativeHandleConstructor) {
     if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
 
     cudaEvent_t raw = nullptr;
-    unsigned int rawFlags = static_cast<unsigned int>(cudaEvent::cudaEventFlags::DisableTiming);
+    unsigned int rawFlags = static_cast<unsigned int>(cuweaver::cudaEventFlags::DisableTiming);
     ASSERT_EQ(cudaEventCreateWithFlags(&raw, rawFlags), cudaSuccess);
     ASSERT_NE(raw, nullptr);
 
@@ -80,7 +80,7 @@ TEST(CuWeaverCudaEvent, AdoptExistingNativeHandleConstructor) {
         EXPECT_TRUE(e.isValid());
         EXPECT_EQ(e.nativeHandle(), raw);
 
-        EXPECT_EQ(e.getFlags(), static_cast<unsigned int>(cudaEvent::cudaEventFlags::Default));
+        EXPECT_EQ(e.getFlags(), static_cast<unsigned int>(cuweaver::cudaEventFlags::Default));
 
         recordAndSync(e.nativeHandle());
     }
@@ -116,7 +116,7 @@ TEST(CuWeaverCudaEvent, MoveAssignmentTransfersOwnership) {
     ASSERT_TRUE(src.isValid());
     auto hsrc = src.nativeHandle();
 
-    cudaEvent dst{cudaEvent::cudaEventFlags::DisableTiming};
+    cudaEvent dst{cuweaver::cudaEventFlags::DisableTiming};
     ASSERT_TRUE(dst.isValid());
 
     dst = std::move(src);
