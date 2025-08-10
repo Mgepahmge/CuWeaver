@@ -98,6 +98,24 @@ namespace cuweaver {
      */
     void eventRecordWithFlags(const cudaEvent& event, const cudaStream& stream = cudaStream::defaultStream(),
                               cudaEventRecordFlags flags = cudaEventRecordFlags::Default);
+
+    /**
+     * @brief Blocks the host thread until the specified CUDA event completes.
+     *
+     * @details Waits for the provided `event` to reach the completed state by invoking `cudaEventSynchronize`
+     *          on the event's native handle. The host thread will block until all operations in the event's
+     *          associated stream (enqueued before the event was recorded) finish executing. This ensures
+     *          host-side synchronization with the event's completion.
+     *
+     * @param[in] event CUDA event whose completion the host thread will wait for.
+     *
+     * @throws cuweaver::cudaError Thrown if the underlying `cudaEventSynchronize` call fails (e.g., invalid
+     *                             event handle, unrecorded event, or a CUDA runtime error).
+     *
+     * @par Returns
+     *      Nothing.
+     */
+    void eventSynchronize(const cudaEvent& event);
 }
 
 #endif

@@ -30,4 +30,8 @@ namespace cuweaver {
         CUW_THROW_IF_ERROR(
             cudaEventRecordWithFlags(event.nativeHandle(), stream.nativeHandle(), static_cast<unsigned int>(flags)));
     }
+
+    void eventSynchronize(const cudaEvent& event) {
+        CUW_THROW_IF_ERROR(cudaEventSynchronize(event.nativeHandle()));
+    }
 }
