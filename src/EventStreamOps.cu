@@ -34,4 +34,17 @@ namespace cuweaver {
     void eventSynchronize(const cudaEvent& event) {
         CUW_THROW_IF_ERROR(cudaEventSynchronize(event.nativeHandle()));
     }
+
+    bool streamQuery(const cudaStream& stream) {
+        try {
+            CUW_THROW_IF_ERROR(cudaStreamQuery(stream.nativeHandle()));
+            return true;
+        }
+        catch (const cudaError& e) {
+            if (e.codeNative() == cudaErrorNotReady) {
+                return false;
+            }
+            throw;
+        }
+    }
 }

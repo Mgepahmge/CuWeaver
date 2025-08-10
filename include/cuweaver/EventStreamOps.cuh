@@ -116,6 +116,22 @@ namespace cuweaver {
      *      Nothing.
      */
     void eventSynchronize(const cudaEvent& event);
+
+    /**
+     * @brief Queries if the underlying CUDA stream of a `cudaStream` wrapper has completed all operations.
+     *
+     * @details Attempts to check the completion status of the managed CUDA stream using `cudaStreamQuery`. If the stream
+     *          has finished all queued work, returns `true`. If the stream is still executing operations (`cudaErrorNotReady`),
+     *          returns `false`. Any other error from `cudaStreamQuery` (e.g., invalid handle) is rethrown as a `cudaError`.
+     *
+     * @param[in] stream Reference to the `cudaStream` wrapper whose underlying CUDA stream to query.
+     *
+     * @retval true The stream has completed all operations.
+     * @retval false The stream is still busy (returned `cudaErrorNotReady`).
+     *
+     * @throws cudaError Thrown if `cudaStreamQuery` returns an error other than `cudaErrorNotReady`.
+     */
+    bool streamQuery(const cudaStream& stream);
 }
 
 #endif
