@@ -1,0 +1,63 @@
+#include <gtest/gtest.h>
+#include <cuda_runtime.h>
+#include <cuweaver/EventStreamOps.cuh>
+
+namespace {
+
+inline bool cudaAvailable() {
+    int count = 0;
+    auto st = cudaGetDeviceCount(&count);
+    return (st == cudaSuccess) && (count > 0);
+}
+
+__global__ void BusyKernel(int iterations) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int acc = 0;
+    for (int i = 0; i < iterations; ++i) {
+        acc += i + idx;
+    }
+    if (acc == 0) {
+        asm volatile("");
+    }
+}
+
+} // namespace
+
+TEST(CuWeaverCudaEvent, EventElapsedTimeNonNegative) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+
+    cuweaver::cudaEvent start;
+    cuweaver::cudaEvent end;
+
+    ASSERT_EQ(cudaEventRecord(start.nativeHandle(), 0), cudaSuccess);
+    ASSERT_EQ(cudaEventRecord(end.nativeHandle(), 0), cudaSuccess);
+
+    ASSERT_EQ(cudaEventSynchronize(end.nativeHandle()), cudaSuccess);
+
+    float ms = 0.0f;
+    ASSERT_NO_THROW({ ms = eventElapsedTime(start, end); });
+    EXPECT_GE(ms, 0.0f);
+}
+
+TEST(CuWeaverCudaEvent, EventQueryReportsPendingAndCompleted) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+    cuweaver::cudaEvent ev;
+
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1>>>(kIterations);
+    ASSERT_EQ(cudaEventRecord(ev.nativeHandle(), 0), cudaSuccess);
+
+    bool done = true;
+    ASSERT_NO_THROW({ done = eventQuery(ev); });
+    EXPECT_FALSE(done);
+
+    ASSERT_EQ(cudaEventSynchronize(ev.nativeHandle()), cudaSuccess);
+    ASSERT_NO_THROW({ done = eventQuery(ev); });
+    EXPECT_TRUE(done);
+}
