@@ -72,6 +72,21 @@ namespace cuweaver {
         static bool isPriorityValid(cudaStreamPriority_t priority) noexcept;
 
         /**
+         * @brief Gets the CUDA default stream (null stream).
+         *
+         * @details Returns a `cudaStream` instance representing the CUDA default stream (also known as the null stream).
+         * The default stream executes work sequentially and synchronizes with all other streams in the same CUDA context.
+         * This function is marked `noexcept` and does not throw exceptions, as it constructs the stream from a null handle
+         * (no CUDA API calls are made that could fail).
+         *
+         * @par Parameters
+         *      None.
+         *
+         * @return `cudaStream` instance wrapping the CUDA default stream (null handle).
+         */
+        static cudaStream defaultStream() noexcept;
+
+        /**
          * @brief Constructs a CUDA stream with default flags and priority.
          *
          * @details Initializes the stream using `cudaStreamFlags::Default` (0x00) and `DefaultPriority` (0),

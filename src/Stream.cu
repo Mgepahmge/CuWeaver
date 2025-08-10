@@ -18,6 +18,10 @@ namespace cuweaver {
         return priority <= getLeastPriority() && priority >= getGreatestPriority();
     }
 
+    cudaStream cudaStream::defaultStream() noexcept {
+        return cudaStream{nullptr};
+    }
+
     cudaStream::cudaStream() : stream(nullptr),
                                flags(static_cast<cudaStreamFlags_t>(cudaStreamFlags::Default)),
                                priority(DefaultPriority) {
