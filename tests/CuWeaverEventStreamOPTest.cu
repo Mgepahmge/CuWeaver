@@ -124,3 +124,20 @@ TEST(CuWeaverCudaEvent, EventSynchronize) {
     ASSERT_NO_THROW({ done = eventQuery(ev); });
     EXPECT_TRUE(done);
 }
+
+TEST(CuWeaverCudaStream, StreamQueryReportsPendingAndCompleted) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+    cuweaver::cudaStream stream;
+
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1, 0, stream.nativeHandle()>>>(kIterations);
+    bool done = true;
+    ASSERT_NO_THROW({ done = cuweaver::streamQuery(stream); });
+    EXPECT_FALSE(done);
+    ASSERT_EQ(cudaStreamSynchronize(stream.nativeHandle()), cudaSuccess);
+    ASSERT_NO_THROW({ done = cuweaver::streamQuery(stream); });
+    EXPECT_TRUE(done);
+}
