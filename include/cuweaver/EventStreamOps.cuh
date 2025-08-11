@@ -196,6 +196,8 @@ namespace cuweaver {
      */
     void streamWaitEvent(const cudaStream& stream, const cudaEvent& event,
                          cudaEventWait flags = cudaEventWait::Default);
+
+    void launchHostFunc(const cudaStream& stream, cudaHostFn_t fn, void* userData);
 }
 
 #endif
