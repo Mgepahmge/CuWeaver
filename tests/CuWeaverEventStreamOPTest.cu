@@ -21,6 +21,18 @@ __global__ void BusyKernel(int iterations) {
     }
 }
 
+    __global__ void VoidKernel(void** args) {
+    const size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int acc = 0;
+    const size_t iterations = 1 << 24;
+    for (int i = 0; i < iterations; ++i) {
+        acc += i + idx;
+    }
+    if (acc == 0) {
+        asm volatile("");
+    }
+}
+
 } // namespace
 
 TEST(CuWeaverCudaEvent, EventElapsedTimeNonNegative) {
@@ -196,4 +208,25 @@ TEST(CuWeaverCudaStream, StreamWaitEvent) {
     ASSERT_FALSE(cuweaver::eventQuery(event2));
     ASSERT_NO_THROW(cuweaver::streamSynchronize(stream1));
     ASSERT_TRUE(cuweaver::eventQuery(event2));
+}
+
+TEST(CuWeaverCudaStream, LaunchHostFunction) {
+#ifndef __CUDACC__
+    GTEST_SKIP() << "Not compiled with CUDA (__CUDACC__ not defined).";
+#endif
+    if (!cudaAvailable()) GTEST_SKIP() << "No CUDA device available.";
+    cuweaver::cudaStream stream;
+
+    ASSERT_THROW(cuweaver::streamAddCallback(stream, nullptr, nullptr, 1), std::invalid_argument);
+
+    int value = 0;
+    auto callback = [](void* userData) {
+        int* value = static_cast<int*>(userData);
+        *value = 42;
+    };
+    constexpr int kIterations = 1 << 24;
+    BusyKernel<<<1, 1, 0, stream.nativeHandle()>>>(kIterations);
+    ASSERT_NO_THROW(cuweaver::launchHostFunc(stream, callback, &value));
+    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream));
+    EXPECT_EQ(value, 42);
 }
