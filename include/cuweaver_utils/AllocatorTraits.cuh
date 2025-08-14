@@ -25,27 +25,24 @@
 namespace cuweaver {
     namespace detail {
         /**
-         * @brief SFINAE utility alias that maps any type pack to `void`.
+         * @brief Utility alias for `void`, used to trigger SFINAE by validating type expressions.
          *
-         * @details Converts an arbitrary list of types into `void`, enabling Substitution Failure Is Not An Error (SFINAE)
-         *          in template metaprogramming. Used to detect whether a given expression or template instantiation is valid
-         *          by forcing substitution failures to exclude invalid template branches.
-         * @tparam ... Unused type parameters; all input types are ignored.
+         * @details Collapses any number of type parameters into `void`. Used in partial specializations
+         *          to detect if a template instantiation (e.g., `Op<Args...>`) is well-formed.
+         * @tparam ... Variadic type parameters (ignored, but drive substitution).
          */
         template <typename...>
         using void_t = void;
 
         /**
-         * @struct detector
-         * @brief Primary template for the detector pattern, a metafunction to check if a template operation is valid.
+         * @brief Primary template for the detector pattern, defaulting to invalid operations.
          *
-         * @details Serves as the base case for the detector pattern. Returns `std::false_type` (via `value_t`) to indicate
-         *          the operation is invalid for the given arguments, and uses `Default` as the fallback result type.
-         *
-         * @tparam Default Type returned as `type` when the operation is invalid.
-         * @tparam AlwaysVoid Placeholder type for SFINAE; typically `void_t<Op<Args...>>` to trigger substitution checks.
-         * @tparam Op Template template parameter representing the operation to validate (e.g., a trait or member function).
-         * @tparam Args Type arguments to pass to the operation `Op`.
+         * @details Base case: used when `Op<Args...>` is not a valid instantiation. Returns
+         *          `std::false_type` and uses `Default` as the associated type.
+         * @tparam Default Fallback type when the operation is invalid.
+         * @tparam AlwaysVoid Unused placeholder for SFINAE triggering.
+         * @tparam Op Template template parameter representing the operation to validate.
+         * @tparam Args Type arguments to pass to `Op`.
          */
         template <typename Default, typename AlwaysVoid, template<typename...> typename Op, typename... Args>
         struct detector {
@@ -54,32 +51,141 @@ namespace cuweaver {
         };
 
         /**
-         * @struct detector
          * @brief Partial specialization of `detector` for valid operations.
          *
-         * @details Activates when the template operation `Op<Args...>` is valid (i.e., `void_t<Op<Args...>>` resolves to `void`).
-         *          Returns `std::true_type` (via `value_t`) to indicate validity and sets `type` to the result of `Op<Args...>`.
-         *
-         * @tparam Default Unused fallback type (overridden by the valid operation result).
+         * @details Specialized when `Op<Args...>` is a valid type (via `void_t<Op<Args...>>`). Returns
+         *          `std::true_type` and uses `Op<Args...>` as the associated type.
+         * @tparam Default Unused (superseded by valid operation type).
          * @tparam Op Template template parameter representing the valid operation.
-         * @tparam Args Type arguments for which `Op<Args...>` is a valid instantiation.
+         * @tparam Args Type arguments for which `Op<Args...>` is valid.
          */
         template <typename Default, template<typename...> typename Op, typename... Args>
         struct detector<Default, void_t<Op<Args...>>, Op, Args...> {
             using value_t = std::true_type;
             using type = Op<Args...>;
         };
+
+        /**
+         * @brief Detects if an allocator has a valid `construct` member function.
+         *
+         * @details Overload resolution helper: returns `std::true_type` if `Alloc::construct(T*, Args...)`
+         *          is callable. The `int` parameter is a placeholder to prioritize this overload.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of object to construct.
+         * @tparam Args Types of arguments for the object's constructor.
+         * @param[in] int Placeholder parameter for overload resolution (pass `0` to invoke).
+         * @return `std::true_type` if `Alloc::construct` is valid; otherwise, SFINAE falls back to the other overload.
+         */
+        template <typename Alloc, typename T, typename... Args>
+        auto test_construct(int) -> decltype(
+            std::declval<Alloc&>().construct(std::declval<T*>(), std::declval<Args>()...),
+            std::true_type{}
+        );
+
+        /**
+         * @brief Fallback overload for `test_construct` when `Alloc::construct` is invalid.
+         *
+         * @details Returns `std::false_type` if the allocator lacks a valid `construct` member.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of object to construct (unused).
+         * @tparam Args Constructor argument types (unused).
+         * @return `std::false_type` always.
+         */
+        template <typename Alloc, typename T, typename... Args>
+        std::false_type test_construct(...);
+
+        /**
+         * @brief Detects if an allocator has a valid `destroy` member function.
+         *
+         * @details Overload resolution helper: returns `std::true_type` if `Alloc::destroy(T*)`
+         *          is callable. The `int` parameter is a placeholder to prioritize this overload.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of object to destroy.
+         * @param[in] int Placeholder parameter for overload resolution (pass `0` to invoke).
+         * @return `std::true_type` if `Alloc::destroy` is valid; otherwise, SFINAE falls back to the other overload.
+         */
+        template <typename Alloc, typename T>
+        auto test_destroy(int) -> decltype(
+            std::declval<Alloc&>().destroy(std::declval<T*>()),
+            std::true_type{}
+        );
+
+        /**
+         * @brief Fallback overload for `test_destroy` when `Alloc::destroy` is invalid.
+         *
+         * @details Returns `std::false_type` if the allocator lacks a valid `destroy` member.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of object to destroy (unused).
+         * @return `std::false_type` always.
+         */
+        template <typename Alloc, typename T>
+        std::false_type test_destroy(...);
+
+        /**
+         * @brief Detects if an allocator has a valid `memcpy` member function.
+         *
+         * @details Overload resolution helper: returns `std::true_type` if `Alloc::memcpy(T*, T*, sizeType, cudaMemcpyKind)`
+         *          is callable. The `int` parameter is a placeholder to prioritize this overload.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of pointers for the memory copy.
+         * @param[in] int Placeholder parameter for overload resolution (pass `0` to invoke).
+         * @return `std::true_type` if `Alloc::memcpy` is valid; otherwise, SFINAE falls back to the other overload.
+         */
+        template <typename Alloc, typename T>
+        auto test_memcpy(int) -> decltype(
+            std::declval<Alloc&>().memcpy(
+                std::declval<T*>(),
+                std::declval<T*>(),
+                std::declval<typename Alloc::sizeType>(),
+                std::declval<cudaMemcpyKind>()
+            ),
+            std::true_type{}
+        );
+
+        /**
+         * @brief Fallback overload for `test_memcpy` when `Alloc::memcpy` is invalid.
+         *
+         * @details Returns `std::false_type` if the allocator lacks a valid `memcpy` member.
+         * @tparam Alloc Allocator type to check.
+         * @tparam T Type of pointers (unused).
+         * @return `std::false_type` always.
+         */
+        template <typename Alloc, typename T>
+        std::false_type test_memcpy(...);
+
+        /**
+         * @brief Detects if an allocator has a valid `maxSize` member function.
+         *
+         * @details Overload resolution helper: returns `std::true_type` if `Alloc::maxSize()`
+         *          is callable on a const instance. The `int` parameter is a placeholder to prioritize this overload.
+         * @tparam Alloc Allocator type to check.
+         * @param[in] int Placeholder parameter for overload resolution (pass `0` to invoke).
+         * @return `std::true_type` if `Alloc::maxSize` is valid; otherwise, SFINAE falls back to the other overload.
+         */
+        template <typename Alloc>
+        auto test_max_size(int) -> decltype(
+            std::declval<const Alloc&>().maxSize(),
+            std::true_type{}
+        );
+
+        /**
+         * @brief Fallback overload for `test_max_size` when `Alloc::maxSize` is invalid.
+         *
+         * @details Returns `std::false_type` if the allocator lacks a valid `maxSize` member.
+         * @tparam Alloc Allocator type to check.
+         * @return `std::false_type` always.
+         */
+        template <typename Alloc>
+        std::false_type test_max_size(...);
     }
 
     /**
-     * @brief Type alias for the detector's boolean result type, indicating if a template operation is valid.
+     * @brief Type alias for the detector's boolean result, indicating template operation validity.
      *
-     * @details A shorthand for `detail::detector<void, void, Op, Args...>::value_t`, which resolves to
-     *          `std::true_type` if the template operation `Op<Args...>` is a valid instantiation, or
-     *          `std::false_type` otherwise. Uses the detector pattern to perform SFINAE-based validity checks.
-     *
-     * @tparam Op Template template parameter representing the operation to validate (e.g., a trait or member function template).
-     * @tparam Args Type arguments to pass to the operation `Op`.
+     * @details Shorthand for `detail::detector<void, void, Op, Args...>::value_t`. Resolves to
+     *          `std::true_type` if `Op<Args...>` is a valid instantiation, or `std::false_type` otherwise.
+     * @tparam Op Template template parameter representing the operation to validate (e.g., a trait).
+     * @tparam Args Type arguments to pass to `Op`.
      */
     template <template<typename...> typename Op, typename... Args>
     using is_detected = typename detail::detector<void, void, Op, Args...>::value_t;
@@ -87,11 +193,10 @@ namespace cuweaver {
     /**
      * @brief Constexpr boolean value indicating if a template operation is valid.
      *
-     * @details A constexpr alias for `is_detected<Op, Args...>::value`, providing a direct boolean result
-     *          of whether the template operation `Op<Args...>` is a valid instantiation.
-     *
+     * @details Direct boolean alias for `is_detected<Op, Args...>::value`. Evaluates to `true` if
+     *          `Op<Args...>` is a valid instantiation, `false` otherwise.
      * @tparam Op Template template parameter representing the operation to validate.
-     * @tparam Args Type arguments to pass to the operation `Op`.
+     * @tparam Args Type arguments to pass to `Op`.
      * @value `true` if `Op<Args...>` is valid; `false` otherwise.
      */
     template <template<typename...> typename Op, typename... Args>
@@ -123,61 +228,45 @@ namespace cuweaver {
         using sizeType = typename Alloc::sizeType; //!< Type for representing memory sizes and element counts.
 
         /**
-         * @brief Decltype alias for the allocator's `construct` member function (if present).
+         * @brief Type trait indicating if the allocator has a valid `construct` member function for constructing `T` objects.
          *
-         * @tparam T Type of the object to construct.
-         * @tparam Args Types of arguments to pass to the object's constructor.
+         * @details Checks if the allocator provides a callable `construct(T*, Args...)` member function that can initialize
+         *          an object of type `T` at the given pointer with the provided arguments. Uses `detail::test_construct`
+         *          and overload resolution to detect validity.
+         * @tparam T Type of the object to be constructed by the allocator's `construct` method.
+         * @tparam Args Types of arguments to pass to the `T` object's constructor via `construct`.
          */
         template <typename T, typename... Args>
-        using construct_t = decltype(std::declval<Alloc&>().construct(std::declval<T*>(), std::declval<Args>()...));
+        using hasConstruct = decltype(detail::test_construct<Alloc, T, Args...>(0));
 
         /**
-         * @brief Type trait indicating if the allocator has a valid `construct` member function for the given types.
+         * @brief Type trait indicating if the allocator has a valid `destroy` member function for destroying `T` objects.
          *
-         * @tparam T Type of the object to construct.
-         * @tparam Args Types of arguments for the constructor.
-         */
-        template <typename T, typename... Args>
-        using hasConstruct = is_detected<construct_t, T, Args...>;
-
-        /**
-         * @brief Decltype alias for the allocator's `destroy` member function (if present).
-         *
-         * @tparam T Type of the object to destroy.
+         * @details Checks if the allocator provides a callable `destroy(T*)` member function that can destroy an object
+         *          of type `T` at the given pointer. Uses `detail::test_destroy` and overload resolution to detect validity.
+         * @tparam T Type of the object to be destroyed by the allocator's `destroy` method.
          */
         template <typename T>
-        using destroy_t = decltype(std::declval<Alloc&>().destroy(std::declval<T*>()));
+        using hasDestroy = decltype(detail::test_destroy<Alloc, T>(0));
 
         /**
-         * @brief Type trait indicating if the allocator has a valid `destroy` member function for the given type.
+         * @brief Type trait indicating if the allocator has a valid `memcpy` member function for copying `T` elements.
          *
-         * @tparam T Type of the object to destroy.
+         * @details Checks if the allocator provides a callable `memcpy(T*, T*, sizeType, cudaMemcpyKind)` member function
+         *          for copying `n` elements of type `T` between memory regions, with a specified CUDA copy kind. Uses
+         *          `detail::test_memcpy` and overload resolution to detect validity.
+         * @tparam T Type of the elements to be copied by the allocator's `memcpy` method.
          */
         template <typename T>
-        using hasDestroy = is_detected<destroy_t, T>;
+        using hasMemcpy = decltype(detail::test_memcpy<Alloc, T>(0));
 
         /**
-         * @brief Decltype alias for the allocator's `memcpy` member function (if present).
+         * @brief Type trait indicating if the allocator has a valid const `maxSize` member function.
          *
-         * @tparam T Type of the pointers involved in the memory copy.
+         * @details Checks if the allocator provides a callable const `maxSize()` member function that returns the maximum
+         *          number of elements it can allocate. Uses `detail::test_max_size` and overload resolution to detect validity.
          */
-        template <typename T>
-        using memcpy_t = decltype(std::declval<Alloc&>().memcpy(std::declval<T*>(), std::declval<T*>(),
-                                                                std::declval<sizeType>(),
-                                                                std::declval<cudaMemcpyKind>()));
-
-        /**
-         * @brief Type trait indicating if the allocator has a valid `memcpy` member function for the given type.
-         *
-         * @tparam T Type of the pointers involved in the memory copy.
-         */
-        template <typename T>
-        using hasMemcpy = is_detected<memcpy_t, T>;
-
-        using maxSize_t = decltype(std::declval<const Alloc&>().maxSize());
-        //!< Decltype alias for the allocator's `maxSize` member function (if present).
-        using hasMaxSize = is_detected<maxSize_t>;
-        //!< Type trait indicating if the allocator has a valid `maxSize` member function.
+        using hasMaxSize = decltype(detail::test_max_size<Alloc>(0));
 
         /**
          * @brief Allocates memory using the provided allocator.
@@ -269,9 +358,9 @@ namespace cuweaver {
          *      Nothing.
          */
         template <typename T>
-        static void memcpy(Alloc* alloc, T* dst, T* src, sizeType n, cudaMemcpyKind kind) {
+        static void memcpy(Alloc& alloc, T* dst, T* src, sizeType n, cudaMemcpyKind kind) {
             if constexpr (hasMemcpy<T>::value) {
-                alloc->memcpy(dst, src, n, kind);
+                alloc.memcpy(dst, src, n, kind);
             }
             else {
                 std::memcpy(dst, src, n * sizeof(T));
