@@ -240,13 +240,41 @@ namespace cuweaver {
         * @par Returns
         *      Nothing.
         */
-        template <typename T, typename... Args>
+        template <typename T>
         static void destroy(Alloc& alloc, T* p) {
             if constexpr (hasDestroy<T>::value) {
                 alloc.destroy(p);
             }
             else {
                 p->~T();
+            }
+        }
+
+        /**
+         * @brief Copies memory using the allocator's `memcpy` method (if available) or `std::memcpy`.
+         *
+         * @details Uses the allocator's `memcpy` member function if it exists (detected via `hasMemcpy<T>`). If the allocator
+         *          does not provide `memcpy`, falls back to `std::memcpy`, where the total byte count is calculated as
+         *          `n * sizeof(T)`. The `cudaMemcpyKind` parameter is ignored in the fallback path.
+         *
+         * @tparam T Type of the elements to copy between memory regions.
+         *
+         * @param[in] alloc Pointer to the allocator; used only if the allocator implements a valid `memcpy` method.
+         * @param[in,out] dst Pointer to the destination memory region where data will be written.
+         * @param[in] src Pointer to the source memory region from which data will be read.
+         * @param[in] n Number of elements of type `T` to copy (not bytes).
+         * @param[in] kind CUDA memory copy type (e.g., host-to-device, device-to-host); ignored if using `std::memcpy`.
+         *
+         * @par Returns
+         *      Nothing.
+         */
+        template <typename T>
+        static void memcpy(Alloc* alloc, T* dst, T* src, sizeType n, cudaMemcpyKind kind) {
+            if constexpr (hasMemcpy<T>::value) {
+                alloc->memcpy(dst, src, n, kind);
+            }
+            else {
+                std::memcpy(dst, src, n * sizeof(T));
             }
         }
 
