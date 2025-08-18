@@ -151,7 +151,7 @@ namespace cuweaver {
 #endif //__CUDACC__
 
 #ifndef __CUDACC__
-#pragma warning("CUDA is not available. " __FILE__ " will not be compiled.")
+#pragma message("CUDA is not available. " __FILE__ " will not be compiled.")
 #endif
 
 #endif //CUWEAVER_EVENT_CUH

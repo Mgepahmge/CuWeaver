@@ -16,6 +16,8 @@
 #ifndef CUWEAVER_ERRORCHECK_CUH
 #define CUWEAVER_ERRORCHECK_CUH
 
+#ifdef __CUDACC__
+
 #include "Error.cuh"
 #include <string_view>
 
@@ -94,5 +96,11 @@ namespace cuweaver {
 #define CUW_THROW_IF_ERROR(expr, ...) \
 ::cuweaver::throwIfError((expr), #expr, ##__VA_ARGS__, CUW_HERE)
 }
+
+#endif
+
+#ifndef __CUDACC__
+#pragma message("CUDA is not available. " __FILE__ " will not be compiled.")
+#endif
 
 #endif //CUWEAVER_ERRORCHECK_CUH

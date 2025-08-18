@@ -270,7 +270,7 @@ namespace cuweaver {
 #endif
 
 #ifndef __CUDACC__
-#pragma warning("CUDA is not available. " __FILE__ " will not be compiled.")
+#pragma message("CUDA is not available. " __FILE__ " will not be compiled.")
 #endif
 
 #endif //CUWEAVER_STREAM_CUH

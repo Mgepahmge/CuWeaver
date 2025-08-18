@@ -16,6 +16,8 @@
 #ifndef CUWEAVER_ERROR_CUH
 #define CUWEAVER_ERROR_CUH
 
+#ifdef __CUDACC__
+
 #include <system_error>
 #include <string>
 
@@ -156,5 +158,11 @@ namespace std {
     struct is_error_code_enum<cudaError_t> : true_type {
     };
 }
+
+#endif
+
+#ifndef __CUDACC__
+#pragma message("CUDA is not available. " __FILE__ " will not be compiled.")
+#endif
 
 #endif //CUWEAVER_ERROR_CUH
