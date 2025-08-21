@@ -55,6 +55,25 @@ namespace cuweaver {
         Default = 0x00,
         External = 0x01,
     };
+
+    /**
+     * @enum cudaDeviceFlags
+     * @brief Enumerates CUDA device scheduling policies and host memory mapping combinations.
+     *
+     * @details Defines strategies for CPU thread behavior while waiting for CUDA device operations,
+     *          along with options to enable **device-accessible pinned host memory** (via `MapHost` suffix).
+     *          Scheduling modes can be combined with memory mapping using bitwise OR (e.g., `AutoMapHost = Auto | MapHost`).
+     */
+    enum class cudaDeviceFlags {
+        Auto = 0x00, //!< Default heuristic: spins if active CUDA contexts ≤ logical processors, else yields. Tegra devices may use BlockingSync for low power.
+        Spin = 0x01, //!< Active spinning during device waits: reduces latency but may impact parallel CPU threads.
+        Yield = 0x02, //!< Yields CPU thread during waits: increases latency but improves parallel CPU thread performance.
+        BlockingSync = 0x04, //!< Blocks CPU thread on a synchronization primitive during device waits.
+        AutoMapHost = 0x08, //!< Auto scheduling + enable device-accessible pinned host memory allocation.
+        SpinMapHost = 0x09, //!< Spin scheduling + enable device-accessible pinned host memory allocation.
+        YieldMapHost = 0x0A, //!< Yield scheduling + enable device-accessible pinned host memory allocation.
+        BlockingSyncMapHost = 0x0B //!< BlockingSync scheduling + enable device-accessible pinned host memory allocation.
+    };
 }
 
 #endif //CUWEAVER_ENUM_CUH
