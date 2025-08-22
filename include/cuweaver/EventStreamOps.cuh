@@ -197,6 +197,22 @@ namespace cuweaver {
     void streamWaitEvent(const cudaStream& stream, const cudaEvent& event,
                          cudaEventWait flags = cudaEventWait::Default);
 
+    /**
+     * @brief Launches a host function to execute on a CUDA stream.
+     *
+     * @details Submits a host-side function `fn` to the underlying CUDA stream of `stream`. The host function will execute
+     *          after all preceding operations in the stream have completed. The `userData` pointer is passed to `fn` as its
+     *          argument when invoked. This function wraps `cudaLaunchHostFunc` and throws an exception on failure.
+     *
+     * @param[in] stream cudaStream wrapper whose underlying stream will schedule the host function.
+     * @param[in] fn Host function to execute (must adhere to the `cudaHostFn_t` signature: `void (*)(void*)`).
+     * @param[in] userData User-defined data pointer passed to `fn` during execution.
+     *
+     * @throws cudaError Thrown if `cudaLaunchHostFunc` fails (e.g., invalid stream handle, null function pointer, or CUDA runtime error).
+     *
+     * @par Returns
+     *      Nothing.
+     */
     void launchHostFunc(const cudaStream& stream, cudaHostFn_t fn, void* userData);
 }
 
