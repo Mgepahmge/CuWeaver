@@ -74,6 +74,11 @@ namespace cuweaver {
         YieldMapHost = 0x0A, //!< Yield scheduling + enable device-accessible pinned host memory allocation.
         BlockingSyncMapHost = 0x0B //!< BlockingSync scheduling + enable device-accessible pinned host memory allocation.
     };
+
+    enum class cudaMemMetaFlags {
+        WRITE,
+        READ
+    };
 }
 
 #endif //CUWEAVER_ENUM_CUH
