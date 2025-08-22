@@ -1,5 +1,5 @@
 /**
-* @file cudaMemMeta.cuh
+ * @file cudaMemMeta.cuh
  * @author Mgepahmge (https://github.com/Mgepahmge)
  * @brief Defines CUDA memory metadata utilities for CuWeaver.
  *
