@@ -205,9 +205,9 @@ TEST(CuWeaverCudaStream, StreamWaitEvent) {
     ASSERT_NO_THROW(cuweaver::eventRecord(event1, stream1));
     ASSERT_NO_THROW(cuweaver::streamWaitEvent(stream2, event1, cuweaver::cudaEventWait::Default));
     ASSERT_NO_THROW(cuweaver::eventRecord(event2, stream2));
-    ASSERT_FALSE(cuweaver::eventQuery(event2));
-    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream1));
+    ASSERT_NO_THROW(cuweaver::streamSynchronize(stream2));
     ASSERT_TRUE(cuweaver::eventQuery(event2));
+    ASSERT_TRUE(cuweaver::eventQuery(event1));
 }
 
 TEST(CuWeaverCudaStream, LaunchHostFunction) {
