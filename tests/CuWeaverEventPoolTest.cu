@@ -161,7 +161,7 @@ TEST_F(EventPoolTest, BatchAcquireAndRelease) {
     // Test acquiring a batch of events and then releasing them
     const size_t batchSize = 50;
     std::vector<std::reference_wrapper<cudaEvent>> events;
-    
+
     // Acquire batch
     for (size_t i = 0; i < batchSize; ++i) {
         events.emplace_back(pool->acquire());
@@ -291,6 +291,162 @@ TEST_F(EventPoolTest, LargeBatchOperations) {
     for (auto it = events.rbegin(); it != events.rend(); ++it) {
         EXPECT_TRUE(pool->release(it->get()));
     }
+}
+
+    // Move semantics tests
+TEST_F(EventPoolTest, MoveConstructor) {
+    // Test move constructor
+    auto originalPool = std::make_unique<EventPool>(3);
+
+    // Acquire some events from original pool
+    cudaEvent& event1 = originalPool->acquire();
+    cudaEvent& event2 = originalPool->acquire();
+
+    // Move construct new pool
+    EventPool movedPool = std::move(*originalPool);
+
+    // Original pool should be in valid but unspecified state
+    // Moved pool should have the resources
+
+    // Test that moved pool can still acquire events
+    cudaEvent& event3 = movedPool.acquire();
+    cudaEvent_t handle3 = event3.nativeHandle();
+    ASSERT_NE(handle3, nullptr);
+    ASSERT_EQ(cudaEventRecord(handle3, 0), cudaSuccess);
+
+    // Release events through moved pool
+    EXPECT_TRUE(movedPool.release(event1));
+    EXPECT_TRUE(movedPool.release(event2));
+    EXPECT_TRUE(movedPool.release(event3));
+}
+
+TEST_F(EventPoolTest, MoveAssignment) {
+    // Test move assignment operator
+    auto sourcePool = std::make_unique<EventPool>(4);
+    auto targetPool = std::make_unique<EventPool>(2);
+
+    // Acquire events from both pools
+    cudaEvent& sourceEvent = sourcePool->acquire();
+    cudaEvent& targetEvent = targetPool->acquire();
+
+    // Store handles for later verification
+    cudaEvent_t sourceHandle = sourceEvent.nativeHandle();
+    cudaEvent_t targetHandle = targetEvent.nativeHandle();
+
+    // Move assign source to target
+    *targetPool = std::move(*sourcePool);
+
+    // Target pool should now have source pool's resources
+    // Test that target pool can acquire new events
+    cudaEvent& newEvent = targetPool->acquire();
+    cudaEvent_t newHandle = newEvent.nativeHandle();
+    ASSERT_NE(newHandle, nullptr);
+
+    // Should be able to release the original source event through target pool
+    EXPECT_TRUE(targetPool->release(sourceEvent));
+    EXPECT_TRUE(targetPool->release(newEvent));
+}
+
+TEST_F(EventPoolTest, SelfMoveAssignment) {
+    // Test self move assignment (should be safe)
+    cudaEvent& event = pool->acquire();
+    cudaEvent_t originalHandle = event.nativeHandle();
+
+    // Self move assignment
+    *pool = std::move(*pool);
+
+    // Pool should still be functional
+    cudaEvent& newEvent = pool->acquire();
+    ASSERT_NE(newEvent.nativeHandle(), nullptr);
+
+    // Original event should still be manageable
+    EXPECT_TRUE(pool->release(event));
+    EXPECT_TRUE(pool->release(newEvent));
+}
+
+TEST_F(EventPoolTest, MoveConstructorWithActiveEvents) {
+    // Test move constructor when pool has active (unreleased) events
+    auto originalPool = std::make_unique<EventPool>(5);
+
+    // Acquire multiple events and use them
+    std::vector<std::reference_wrapper<cudaEvent>> events;
+    for (int i = 0; i < 3; ++i) {
+        events.emplace_back(originalPool->acquire());
+        cudaEvent_t handle = events.back().get().nativeHandle();
+        ASSERT_EQ(cudaEventRecord(handle, 0), cudaSuccess);
+    }
+
+    // Move construct while events are still active
+    EventPool movedPool = std::move(*originalPool);
+
+    // Synchronize all events
+    for (auto& eventRef : events) {
+        cudaEvent_t handle = eventRef.get().nativeHandle();
+        ASSERT_EQ(cudaEventSynchronize(handle), cudaSuccess);
+    }
+
+    // Should be able to release events through moved pool
+    for (auto& eventRef : events) {
+        EXPECT_TRUE(movedPool.release(eventRef.get()));
+    }
+
+    // Moved pool should continue to work normally
+    cudaEvent& newEvent = movedPool.acquire();
+    ASSERT_NE(newEvent.nativeHandle(), nullptr);
+    EXPECT_TRUE(movedPool.release(newEvent));
+}
+
+TEST_F(EventPoolTest, ChainedMoveOperations) {
+    // Test chained move operations
+    auto pool1 = std::make_unique<EventPool>(2);
+    auto pool2 = std::make_unique<EventPool>(3);
+    auto pool3 = std::make_unique<EventPool>(4);
+
+    // Acquire events from each pool
+    cudaEvent& event1 = pool1->acquire();
+    cudaEvent& event2 = pool2->acquire();
+    cudaEvent& event3 = pool3->acquire();
+
+    // Chain move assignments: pool3 = pool2 = pool1
+    *pool2 = std::move(*pool1);
+    *pool3 = std::move(*pool2);
+
+    // pool3 should now have pool1's original resources
+    EXPECT_TRUE(pool3->release(event1));
+
+    // pool3 should still be functional
+    cudaEvent& newEvent = pool3->acquire();
+    ASSERT_NE(newEvent.nativeHandle(), nullptr);
+    EXPECT_TRUE(pool3->release(newEvent));
+}
+
+TEST_F(EventPoolTest, MoveAfterPoolExpansion) {
+    // Test move operations after pool has expanded beyond initial size
+    auto originalPool = std::make_unique<EventPool>(2);
+
+    // Expand pool by acquiring more events than initial size
+    std::vector<std::reference_wrapper<cudaEvent>> events;
+    for (int i = 0; i < 10; ++i) {
+        events.emplace_back(originalPool->acquire());
+    }
+
+    // Release some events to create a mixed state
+    for (int i = 0; i < 5; ++i) {
+        EXPECT_TRUE(originalPool->release(events[i].get()));
+    }
+
+    // Move construct from expanded pool
+    EventPool movedPool = std::move(*originalPool);
+
+    // Should be able to manage remaining active events
+    for (int i = 5; i < 10; ++i) {
+        EXPECT_TRUE(movedPool.release(events[i].get()));
+    }
+
+    // Moved pool should continue to work with its expanded capacity
+    cudaEvent& newEvent = movedPool.acquire();
+    ASSERT_NE(newEvent.nativeHandle(), nullptr);
+    EXPECT_TRUE(movedPool.release(newEvent));
 }
 
 }

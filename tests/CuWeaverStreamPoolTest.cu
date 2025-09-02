@@ -423,3 +423,320 @@ TEST_F(CuWeaverStreamPoolTest, LargePoolSize) {
     
     EXPECT_TRUE(largePool.syncAllStreams());
 }
+
+// Test move constructor functionality
+TEST_F(CuWeaverStreamPoolTest, MoveConstructor) {
+    // Create original pool
+    cuweaver::StreamPool originalPool(4, 2);
+
+    // Collect all unique streams from original pool
+    std::set<cudaStream_t> originalExecStreams;
+    std::set<cudaStream_t> originalResourceStreams;
+
+    // Get all execution streams (should cycle through 4 unique streams)
+    for (int i = 0; i < 8; ++i) {
+        originalExecStreams.insert(originalPool.getExecutionStream().nativeHandle());
+    }
+    // Get all resource streams (should cycle through 2 unique streams)
+    for (int i = 0; i < 4; ++i) {
+        originalResourceStreams.insert(originalPool.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(originalExecStreams.size(), 4);
+    EXPECT_EQ(originalResourceStreams.size(), 2);
+
+    // Move construct new pool
+    cuweaver::StreamPool movedPool = std::move(originalPool);
+
+    // Collect all streams from moved pool
+    std::set<cudaStream_t> movedExecStreams;
+    std::set<cudaStream_t> movedResourceStreams;
+
+    for (int i = 0; i < 8; ++i) {
+        movedExecStreams.insert(movedPool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 4; ++i) {
+        movedResourceStreams.insert(movedPool.getResourceStream().nativeHandle());
+    }
+
+    // Moved pool should have the same streams as original
+    EXPECT_EQ(movedExecStreams.size(), 4);
+    EXPECT_EQ(movedResourceStreams.size(), 2);
+    EXPECT_EQ(movedExecStreams, originalExecStreams);
+    EXPECT_EQ(movedResourceStreams, originalResourceStreams);
+
+    // Moved pool should be fully functional
+    cuweaver::cudaStream& stream = movedPool.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, stream.nativeHandle()>>>(d_data1, dataSize, 10);
+
+    EXPECT_TRUE(movedPool.syncAllStreams());
+
+    // Verify computation worked
+    std::vector<float> result(dataSize);
+    cudaMemcpy(result.data(), d_data1, dataSize * sizeof(float), cudaMemcpyDeviceToHost);
+    EXPECT_NE(result[0], 1.0f);
+}
+
+// Test move assignment operator functionality
+TEST_F(CuWeaverStreamPoolTest, MoveAssignment) {
+    // Create source pool with specific configuration
+    cuweaver::StreamPool sourcePool(6, 3);
+
+    // Create target pool with different configuration
+    cuweaver::StreamPool targetPool(2, 1);
+
+    // Collect all streams from source pool before move
+    std::set<cudaStream_t> sourceExecStreams;
+    std::set<cudaStream_t> sourceResourceStreams;
+
+    for (int i = 0; i < 12; ++i) {  // Get enough to cycle through all streams
+        sourceExecStreams.insert(sourcePool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 6; ++i) {
+        sourceResourceStreams.insert(sourcePool.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(sourceExecStreams.size(), 6);
+    EXPECT_EQ(sourceResourceStreams.size(), 3);
+
+    // Get target pool's original streams for verification they're different
+    std::set<cudaStream_t> originalTargetExecStreams;
+    std::set<cudaStream_t> originalTargetResourceStreams;
+
+    for (int i = 0; i < 4; ++i) {
+        originalTargetExecStreams.insert(targetPool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 2; ++i) {
+        originalTargetResourceStreams.insert(targetPool.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(originalTargetExecStreams.size(), 2);
+    EXPECT_EQ(originalTargetResourceStreams.size(), 1);
+
+    // Perform move assignment
+    targetPool = std::move(sourcePool);
+
+    // Collect streams from target pool after move assignment
+    std::set<cudaStream_t> targetExecStreams;
+    std::set<cudaStream_t> targetResourceStreams;
+
+    for (int i = 0; i < 12; ++i) {
+        targetExecStreams.insert(targetPool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 6; ++i) {
+        targetResourceStreams.insert(targetPool.getResourceStream().nativeHandle());
+    }
+
+    // Target should now have same streams as original source
+    EXPECT_EQ(targetExecStreams.size(), 6);
+    EXPECT_EQ(targetResourceStreams.size(), 3);
+    EXPECT_EQ(targetExecStreams, sourceExecStreams);
+    EXPECT_EQ(targetResourceStreams, sourceResourceStreams);
+
+    // Target pool should be fully functional
+    cuweaver::cudaStream& stream = targetPool.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, stream.nativeHandle()>>>(d_data1, dataSize, 20);
+
+    EXPECT_TRUE(targetPool.syncAllStreams());
+
+    // Verify results
+    std::vector<float> result(dataSize);
+    cudaMemcpy(result.data(), d_data1, dataSize * sizeof(float), cudaMemcpyDeviceToHost);
+    EXPECT_NE(result[0], 1.0f);
+}
+
+// Test self-assignment protection
+TEST_F(CuWeaverStreamPoolTest, MoveAssignmentSelfAssignment) {
+    cuweaver::StreamPool pool(4, 2);
+
+    // Collect original streams
+    std::set<cudaStream_t> originalExecStreams;
+    std::set<cudaStream_t> originalResourceStreams;
+
+    for (int i = 0; i < 8; ++i) {
+        originalExecStreams.insert(pool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 4; ++i) {
+        originalResourceStreams.insert(pool.getResourceStream().nativeHandle());
+    }
+
+    // Launch operation to establish working state
+    cuweaver::cudaStream& stream = pool.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, stream.nativeHandle()>>>(d_data1, dataSize, 10);
+
+    // Self-assignment (should be handled gracefully)
+    pool = std::move(pool);
+
+    // Pool should still be functional after self-assignment
+    std::set<cudaStream_t> postAssignmentExecStreams;
+    std::set<cudaStream_t> postAssignmentResourceStreams;
+
+    for (int i = 0; i < 8; ++i) {
+        postAssignmentExecStreams.insert(pool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 4; ++i) {
+        postAssignmentResourceStreams.insert(pool.getResourceStream().nativeHandle());
+    }
+
+    // Configuration and streams should remain unchanged
+    EXPECT_EQ(postAssignmentExecStreams.size(), 4);
+    EXPECT_EQ(postAssignmentResourceStreams.size(), 2);
+    EXPECT_EQ(postAssignmentExecStreams, originalExecStreams);
+    EXPECT_EQ(postAssignmentResourceStreams, originalResourceStreams);
+
+    // Pool should still be functional
+    cuweaver::cudaStream& newStream = pool.getExecutionStream();
+    dummyKernel<<<gridSize, blockSize, 0, newStream.nativeHandle()>>>(d_data2, dataSize, 10);
+    EXPECT_TRUE(pool.syncAllStreams());
+}
+
+// Test move semantics with active operations
+TEST_F(CuWeaverStreamPoolTest, MoveWithActiveOperations) {
+    cuweaver::StreamPool sourcePool(3, 2);
+
+    // Collect original stream set before launching operations
+    std::set<cudaStream_t> originalExecStreams;
+    std::set<cudaStream_t> originalResourceStreams;
+
+    for (int i = 0; i < 6; ++i) {
+        originalExecStreams.insert(sourcePool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 4; ++i) {
+        originalResourceStreams.insert(sourcePool.getResourceStream().nativeHandle());
+    }
+
+    // Launch long-running operations
+    for (int i = 0; i < 5; ++i) {
+        cuweaver::cudaStream& stream = sourcePool.getExecutionStream();
+
+        dim3 blockSize(256);
+        dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+        dummyKernel<<<gridSize, blockSize, 0, stream.nativeHandle()>>>(
+            d_data1, dataSize, 500);  // Long-running operation
+    }
+
+    // Move construct while operations are potentially still running
+    cuweaver::StreamPool movedPool = std::move(sourcePool);
+
+    // Verify moved pool has same streams
+    std::set<cudaStream_t> movedExecStreams;
+    std::set<cudaStream_t> movedResourceStreams;
+
+    for (int i = 0; i < 6; ++i) {
+        movedExecStreams.insert(movedPool.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 4; ++i) {
+        movedResourceStreams.insert(movedPool.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(movedExecStreams, originalExecStreams);
+    EXPECT_EQ(movedResourceStreams, originalResourceStreams);
+
+    // Synchronize moved pool (should wait for active operations)
+    EXPECT_TRUE(movedPool.syncAllStreams());
+
+    // Launch new operations on moved pool
+    cuweaver::cudaStream& newStream = movedPool.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, newStream.nativeHandle()>>>(
+        d_data2, dataSize, 10);
+
+    EXPECT_TRUE(movedPool.syncAllStreams());
+
+    // Verify results
+    std::vector<float> result1(dataSize), result2(dataSize);
+    cudaMemcpy(result1.data(), d_data1, dataSize * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(result2.data(), d_data2, dataSize * sizeof(float), cudaMemcpyDeviceToHost);
+
+    EXPECT_NE(result1[0], 1.0f);
+    EXPECT_NE(result2[0], 1.0f);
+}
+
+// Test chained move operations
+TEST_F(CuWeaverStreamPoolTest, ChainedMoveOperations) {
+    cuweaver::StreamPool pool1(5, 3);
+
+    // Collect original stream configuration
+    std::set<cudaStream_t> originalExecStreams;
+    std::set<cudaStream_t> originalResourceStreams;
+
+    for (int i = 0; i < 10; ++i) {
+        originalExecStreams.insert(pool1.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 6; ++i) {
+        originalResourceStreams.insert(pool1.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(originalExecStreams.size(), 5);
+    EXPECT_EQ(originalResourceStreams.size(), 3);
+
+    // Launch operation to establish state
+    cuweaver::cudaStream& stream1 = pool1.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, stream1.nativeHandle()>>>(d_data1, dataSize, 10);
+
+    // Chain of moves: pool1 -> pool2 -> pool3
+    cuweaver::StreamPool pool2 = std::move(pool1);
+    cuweaver::StreamPool pool3 = std::move(pool2);
+
+    // Final pool should have original stream configuration
+    std::set<cudaStream_t> finalExecStreams;
+    std::set<cudaStream_t> finalResourceStreams;
+
+    for (int i = 0; i < 10; ++i) {
+        finalExecStreams.insert(pool3.getExecutionStream().nativeHandle());
+    }
+    for (int i = 0; i < 6; ++i) {
+        finalResourceStreams.insert(pool3.getResourceStream().nativeHandle());
+    }
+
+    EXPECT_EQ(finalExecStreams.size(), 5);
+    EXPECT_EQ(finalResourceStreams.size(), 3);
+    EXPECT_EQ(finalExecStreams, originalExecStreams);
+    EXPECT_EQ(finalResourceStreams, originalResourceStreams);
+
+    // Should be fully functional
+    cuweaver::cudaStream& finalStream = pool3.getExecutionStream();
+    dummyKernel<<<gridSize, blockSize, 0, finalStream.nativeHandle()>>>(
+        d_data2, dataSize, 10);
+    EXPECT_TRUE(pool3.syncAllStreams());
+}
+
+// Test moved-from object state
+TEST_F(CuWeaverStreamPoolTest, MovedFromObjectState) {
+    cuweaver::StreamPool originalPool(3, 2);
+
+    // Use original pool
+    cuweaver::cudaStream& stream = originalPool.getExecutionStream();
+    dim3 blockSize(256);
+    dim3 gridSize((dataSize + blockSize.x - 1) / blockSize.x);
+    dummyKernel<<<gridSize, blockSize, 0, stream.nativeHandle()>>>(d_data1, dataSize, 10);
+    EXPECT_TRUE(originalPool.syncAllStreams());
+
+    // Move construct
+    cuweaver::StreamPool movedPool = std::move(originalPool);
+
+    // Moved-from object should be in a valid but unspecified state
+    // We can't guarantee what operations will succeed, but they shouldn't crash
+    // This tests the basic requirement that moved-from objects remain destructible
+
+    // The destructor should handle the moved-from state gracefully
+    // (This will be tested when originalPool goes out of scope)
+
+    // Moved-to object should work perfectly
+    cuweaver::cudaStream& movedStream = movedPool.getExecutionStream();
+    dummyKernel<<<gridSize, blockSize, 0, movedStream.nativeHandle()>>>(d_data2, dataSize, 10);
+    EXPECT_TRUE(movedPool.syncAllStreams());
+
+    std::vector<float> result(dataSize);
+    cudaMemcpy(result.data(), d_data2, dataSize * sizeof(float), cudaMemcpyDeviceToHost);
+    EXPECT_NE(result[0], 1.0f);
+}
