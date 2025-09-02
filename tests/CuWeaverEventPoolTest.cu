@@ -449,6 +449,49 @@ TEST_F(EventPoolTest, MoveAfterPoolExpansion) {
     EXPECT_TRUE(movedPool.release(newEvent));
 }
 
+    TEST_F(EventPoolTest, ReleaseValidRawEvent) {
+    // Test releasing a valid event back to the pool
+    cudaEvent& event = pool->acquire();
+    cudaEvent_t originalHandle = event.nativeHandle();
+
+    // Use the event for some CUDA operation
+    ASSERT_EQ(cudaEventRecord(originalHandle, 0), cudaSuccess);
+
+    // Release the event
+    bool result = pool->release(originalHandle);
+    EXPECT_TRUE(result) << "Failed to release valid event";
+}
+
+    TEST_F(EventPoolTest, ReleaseInvalidRawEvent) {
+    // Test releasing an event that wasn't acquired from this pool
+    cudaEvent externalEvent(cudaEventFlags::DisableTiming);
+
+    // Try to release an external event
+    bool result = pool->release(externalEvent.nativeHandle());
+    EXPECT_FALSE(result) << "Should fail to release external event";
+}
+
+    TEST_F(EventPoolTest, AcquireReleaseAcquireCycleRaw) {
+    // Test the complete acquire-release-acquire cycle
+    cudaEvent& event1 = pool->acquire();
+    cudaEvent_t handle1 = event1.nativeHandle();
+
+    // Use the event
+    ASSERT_EQ(cudaEventRecord(handle1, 0), cudaSuccess);
+    ASSERT_EQ(cudaEventSynchronize(handle1), cudaSuccess);
+
+    // Release the event
+    ASSERT_TRUE(pool->release(event1.nativeHandle()));
+
+    // Acquire another event (should potentially reuse the released one)
+    cudaEvent& event2 = pool->acquire();
+    cudaEvent_t handle2 = event2.nativeHandle();
+    ASSERT_NE(handle2, nullptr);
+
+    // The handle might be the same (reused) or different (new allocation)
+    // Both scenarios are valid depending on pool implementation
+}
+
 }
 
 #endif // __CUDACC__
