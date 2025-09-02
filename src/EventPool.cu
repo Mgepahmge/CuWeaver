@@ -57,7 +57,11 @@ namespace cuweaver {
     }
 
     bool EventPool::release(const cudaEvent& event) {
-        const auto it = busyMap.find(event.nativeHandle());
+        return release(event.nativeHandle());
+    }
+
+    bool EventPool::release(cudaEvent_t event) {
+        const auto it = busyMap.find(event);
         if (it == busyMap.end()) {
             return false;
         }

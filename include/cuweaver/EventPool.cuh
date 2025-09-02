@@ -86,18 +86,31 @@ namespace cuweaver {
         cudaEvent& acquire();
 
         /**
-         * @brief Releases a CUDA event back to the pool for reuse.
+         * @brief Releases a CUDA event managed by this pool using its wrapper object.
          *
-         * @details Returns an acquired event to the free list. The event must have been obtained via
-         *          `acquire()` (verified using its native handle). If the event is not in the busy map,
-         *          the release operation fails.
+         * @details Extracts the native CUDA event handle from the provided wrapper object and forwards it
+         *          to the overloaded release method that accepts a `cudaEvent_t`. This is a convenience
+         *          method for working with wrapped event instances.
          *
-         * @param[in] event Reference to the `cudaEvent` to release back to the pool.
+         * @param[in] event The wrapped CUDA event object to release.
          *
-         * @return true If the event was successfully released (exists in the busy map);
-         *         false Otherwise (event is not managed by this pool or already free).
+         * @return True if the event was successfully released; false if the event was not managed by this pool.
          */
         bool release(const cudaEvent& event);
+
+        /**
+         * @brief Releases a native CUDA event handle back to this pool.
+         *
+         * @details Checks if the provided native event handle is tracked in the pool's busy set (`busyMap`).
+         *          If found, the handle is removed from `busyMap`, and its associated node is appended to
+         *          the end of the free list for future reuse. If the handle is not managed by this pool,
+         *          the method returns false.
+         *
+         * @param[in] event The native CUDA event handle to release.
+         *
+         * @return True if the event was successfully released; false if the event was not managed by this pool.
+         */
+        bool release(cudaEvent_t event);
 
     private:
         /**
