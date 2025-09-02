@@ -47,6 +47,35 @@ namespace cuweaver {
          */
         explicit StreamPool(size_t numExecutionStreams = 16, size_t numResourceStreams = 4);
 
+        StreamPool(const StreamPool&) = delete; //!< Disable copy constructor.
+
+        StreamPool& operator=(const StreamPool&) = delete; //!< Disable copy assignment.
+
+        /**
+         * @brief Default move constructor for StreamPool.
+         *
+         * @details Constructs a StreamPool by transferring ownership of resources from another instance.
+         *          The moved-from instance (`other`) is left in a valid but unspecified state after the operation.
+         *          This constructor uses compiler-generated move semantics.
+         *
+         * @param[in] other The StreamPool instance to move resources from.
+         */
+        StreamPool(StreamPool&& other) noexcept = default;
+
+        /**
+         * @brief Default move assignment operator for StreamPool.
+         *
+         * @details Transfers ownership of resources from another StreamPool to this instance.
+         *          Releases any resources previously held by this pool before acquiring resources from `other`.
+         *          The moved-from instance (`other`) is left in a valid but unspecified state after the operation.
+         *          This operator uses compiler-generated move semantics.
+         *
+         * @param[in] other The StreamPool instance to move resources from.
+         *
+         * @return Reference to this StreamPool instance after the move assignment.
+         */
+        StreamPool& operator=(StreamPool&& other) noexcept = default;
+
         /**
          * @brief Acquires the next execution stream in round-robin order.
          *

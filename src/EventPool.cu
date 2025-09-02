@@ -10,6 +10,31 @@ namespace cuweaver {
         }
     }
 
+    EventPool::EventPool(EventPool&& other) noexcept : freeHead(other.freeHead),
+                                                     freeTail(other.freeTail),
+                                                     busyMap(std::move(other.busyMap)),
+                                                     allNodes(std::move(other.allNodes)),
+                                                     poolSize(other.poolSize) {
+        other.freeHead = nullptr;
+        other.freeTail = nullptr;
+        other.poolSize = 0;
+    }
+
+    EventPool& EventPool::operator=(EventPool&& other) noexcept {
+        if (this != &other) {
+            freeHead = other.freeHead;
+            freeTail = other.freeTail;
+            busyMap = std::move(other.busyMap);
+            allNodes = std::move(other.allNodes);
+            poolSize = other.poolSize;
+
+            other.freeHead = nullptr;
+            other.freeTail = nullptr;
+            other.poolSize = 0;
+        }
+        return *this;
+    }
+
     cudaEvent& EventPool::acquire() {
         if (!freeHead) {
             expansion();

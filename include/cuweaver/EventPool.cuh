@@ -44,6 +44,34 @@ namespace cuweaver {
          */
         explicit EventPool(size_t PoolSize);
 
+        EventPool(const EventPool&) = delete; //!< Disable copy constructor.
+
+        EventPool& operator=(const EventPool&) = delete; //!< Disable copy assignment.
+
+        /**
+         * @brief Constructs an EventPool by moving resources from another instance.
+         *
+         * @details Transfers ownership of the free event list, busy map, node storage,
+         *          and pool size from `other` to this pool. The `other` instance is left
+         *          in a valid but unspecified state after the move.
+         *
+         * @param[in] other The EventPool to move resources from.
+         */
+        EventPool(EventPool&& other) noexcept;
+
+        /**
+         * @brief Moves ownership of resources from another EventPool to this instance.
+         *
+         * @details Releases any existing resources in this pool, then transfers all
+         *          resources (free list, busy map, nodes, pool size) from `other`.
+         *          The `other` instance is left in a valid but unspecified state.
+         *
+         * @param[in] other The EventPool to move resources from.
+         *
+         * @return Reference to this EventPool after the move operation.
+         */
+        EventPool& operator=(EventPool&& other) noexcept;
+
         /**
          * @brief Acquires a free CUDA event from the pool.
          *
@@ -123,6 +151,7 @@ namespace cuweaver {
          * @throws std::runtime_error If creating new nodes or CUDA events fails during expansion.
          */
         void expansion();
+
         Node* freeHead; //!< Head pointer of the doubly linked list of free events.
         Node* freeTail; //!< Tail pointer of the doubly linked list of free events.
         std::unordered_map<cudaEvent_t, Node*> busyMap; //!< Maps busy event native handles to their Node.
