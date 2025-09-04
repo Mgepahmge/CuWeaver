@@ -151,30 +151,6 @@ namespace cuweaver {
         void disablePeerAccess(const cudaDevice& peerDevice) const;
 
     private:
-        /**
-         * @brief Toggles the CUDA device context to execute a function, then restores the original device.
-         *
-         * @details Switches to the device managed by this object, runs the provided function \p func with \p args,
-         *          and reverts to the previously active device. Throws an error if context switching fails.
-         *
-         * @tparam F Type of the function to execute on the device.
-         * @tparam Args Types of arguments to pass to \p func.
-         * @param[in] func Function to execute after switching to the managed device.
-         * @param[in] args Arguments to forward to \p func (perfect forwarding).
-         */
-        template <typename F, typename... Args>
-        void switchContext(F func, Args&&... args) const {
-            int current = 0;
-            CUW_THROW_IF_ERROR(cudaGetDevice(&current));
-            if (current == deviceId) {
-                func(std::forward<Args>(args)...);
-                return;
-            }
-            CUW_THROW_IF_ERROR(cudaSetDevice(deviceId));
-            func(std::forward<Args>(args)...);
-            CUW_THROW_IF_ERROR(cudaSetDevice(current));
-        }
-
         int deviceId;
     };
 

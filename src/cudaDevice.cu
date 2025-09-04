@@ -19,31 +19,27 @@ namespace cuweaver {
     }
 
     void cudaDevice::setFlags(cudaDeviceFlags flags) const {
-        switchContext([flags] {
-            CUW_THROW_IF_ERROR(cudaSetDeviceFlags(static_cast<unsigned int>(flags)));
-        });
+        TempDeviceContext tempContext(deviceId);
+        CUW_THROW_IF_ERROR(cudaSetDeviceFlags(static_cast<unsigned int>(flags)));
     }
 
     cudaDeviceFlags cudaDevice::getFlags() const {
         unsigned flags = 0;
-        switchContext([&flags] {
-            unsigned int flags_ = 0;
-            CUW_THROW_IF_ERROR(cudaGetDeviceFlags(&flags_));
-            flags = flags_;
-        });
+        TempDeviceContext tempContext(deviceId);
+        unsigned int flags_ = 0;
+        CUW_THROW_IF_ERROR(cudaGetDeviceFlags(&flags_));
+        flags = flags_;
         return static_cast<cudaDeviceFlags>(flags);
     }
 
     void cudaDevice::synchronize() const {
-        switchContext([] {
-            CUW_THROW_IF_ERROR(cudaDeviceSynchronize());
-        });
+        TempDeviceContext tempContext(deviceId);
+        CUW_THROW_IF_ERROR(cudaDeviceSynchronize());
     }
 
     void cudaDevice::reset() const {
-        switchContext([] {
-            CUW_THROW_IF_ERROR(cudaDeviceReset());
-        });
+        TempDeviceContext tempContext(deviceId);
+        CUW_THROW_IF_ERROR(cudaDeviceReset());
     }
 
     std::string cudaDevice::getPCIBusId(const unsigned int len) const {
@@ -66,9 +62,8 @@ namespace cuweaver {
             throw std::runtime_error(
                 "Device " + std::to_string(deviceId) + " cannot access peer device " + std::to_string(peerDevice));
         }
-        switchContext([peerDevice] {
-            CUW_THROW_IF_ERROR(cudaDeviceEnablePeerAccess(peerDevice, 0));
-        });
+        TempDeviceContext tempContext(deviceId);
+        CUW_THROW_IF_ERROR(cudaDeviceEnablePeerAccess(peerDevice, 0));
     }
 
     void cudaDevice::enablePeerAccess(const cudaDevice& peerDevice) const {
@@ -83,9 +78,8 @@ namespace cuweaver {
             throw std::runtime_error(
                 "Device " + std::to_string(deviceId) + " cannot access peer device " + std::to_string(peerDevice));
         }
-        switchContext([peerDevice] {
-            CUW_THROW_IF_ERROR(cudaDeviceDisablePeerAccess(peerDevice));
-        });
+        TempDeviceContext tempContext(deviceId);
+        CUW_THROW_IF_ERROR(cudaDeviceDisablePeerAccess(peerDevice));
     }
 
     void cudaDevice::disablePeerAccess(const cudaDevice& peerDevice) const {
