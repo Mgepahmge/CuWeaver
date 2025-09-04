@@ -92,6 +92,18 @@ namespace cuweaver {
         disablePeerAccess(peerDevice.deviceId);
     }
 
+    TempDeviceContext::TempDeviceContext(const int device) : originalDevice(getDeviceRaw()) {
+        switchDevice(device);
+    }
+
+    TempDeviceContext::TempDeviceContext(const cudaDevice& device) : originalDevice(getDeviceRaw()) {
+        switchDevice(device);
+    }
+
+    TempDeviceContext::~TempDeviceContext() {
+        switchDevice(originalDevice);
+    }
+
     int getDeviceCount() {
         int count = 0;
         CUW_THROW_IF_ERROR(cudaGetDeviceCount(&count));
@@ -267,5 +279,15 @@ namespace cuweaver {
                 }
             }
         }
+    }
+
+    void switchDevice(const int device) {
+        if (const auto current = getDeviceRaw(); current != device) {
+            setDevice(device);
+        }
+    }
+
+    void switchDevice(const cudaDevice& device) {
+        switchDevice(device.getDeviceId());
     }
 }

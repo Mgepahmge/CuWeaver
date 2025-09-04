@@ -179,6 +179,49 @@ namespace cuweaver {
     };
 
     /**
+     * @struct TempDeviceContext
+     * @brief RAII-based temporary CUDA device context switcher.
+     *
+     * @details Manages temporary CUDA device switching using RAII (Resource Acquisition Is Initialization).
+     *          On construction, switches to the specified target device. On destruction, restores the
+     *          original device that was active before this object was created.
+     */
+    struct TempDeviceContext {
+        /**
+         * @brief Constructs a context switcher targeting the specified CUDA device ID.
+         *
+         * @details Saves the currently active CUDA device ID (retrieved via `getDeviceRaw()`) and switches
+         *          to the target device using `switchDevice()`. The original device will be restored when
+         *          this object is destroyed.
+         *
+         * @param[in] device Target CUDA device ID to switch to.
+         */
+        explicit TempDeviceContext(int device);
+
+        /**
+         * @brief Constructs a context switcher targeting the device represented by a `cudaDevice` object.
+         *
+         * @details Saves the currently active CUDA device ID (retrieved via `getDeviceRaw()`) and switches
+         *          to the device identified by the provided `cudaDevice` object (using its internal ID).
+         *          The original device will be restored when this object is destroyed.
+         *
+         * @param[in] device `cudaDevice` object representing the target device to switch to.
+         */
+        explicit TempDeviceContext(const cudaDevice& device);
+
+        /**
+         * @brief Destroys the context switcher and restores the original CUDA device.
+         *
+         * @details Reverts the active CUDA device to the original ID saved during construction by calling
+         *          `switchDevice(originalDevice)`. This operation is guaranteed to execute, even if
+         *          exceptions are thrown during the object's lifetime.
+         */
+        ~TempDeviceContext();
+
+        int originalDevice; //!< Original CUDA device ID to restore on destruction.
+    };
+
+    /**
      * @brief Gets the number of available CUDA-capable devices.
      *
      * @details Calls `cudaGetDeviceCount` to retrieve the total count of CUDA devices present in the system.
@@ -608,6 +651,27 @@ namespace cuweaver {
      * @throws std::runtime_error If disabling peer access for any device pair fails.
      */
     void deviceDisablePeerAccessAll();
+
+    /**
+     * @brief Switches the current CUDA device to the specified ID if not already active.
+     *
+     * @details Checks if the current CUDA device (retrieved via `getDeviceRaw()`) matches the target ID.
+     *          If they differ, calls `setDevice()` to switch to the target device. This avoids redundant
+     *          device switch operations.
+     *
+     * @param[in] device Target CUDA device ID.
+     */
+    void switchDevice(int device);
+
+    /**
+     * @brief Switches the current CUDA device using a wrapped device object.
+     *
+     * @details Extracts the target device ID from the provided `cudaDevice` object (via `getDeviceId()`)
+     *          and forwards it to the overloaded `switchDevice()` method that accepts an integer device ID.
+     *
+     * @param[in] device Wrapped CUDA device object containing the target device ID.
+     */
+    void switchDevice(const cudaDevice& device);
 }
 
 #endif
