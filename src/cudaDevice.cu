@@ -290,4 +290,9 @@ namespace cuweaver {
     void switchDevice(const cudaDevice& device) {
         switchDevice(device.getDeviceId());
     }
+
+    bool isCudaAvailable() {
+        const auto deviceCount = getDeviceCount();
+        return deviceCount > 0;
+    }
 }

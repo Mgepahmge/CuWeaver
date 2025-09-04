@@ -672,6 +672,20 @@ namespace cuweaver {
      * @param[in] device Wrapped CUDA device object containing the target device ID.
      */
     void switchDevice(const cudaDevice& device);
+
+    /**
+     * @brief Checks if CUDA is available on the system.
+     *
+     * @details Determines CUDA availability by querying the number of CUDA-compatible devices
+     *          via `getDeviceCount()`. CUDA is considered available if at least one device exists.
+     *
+     * @par Parameters
+     *      None.
+     *
+     * @retval true CUDA is available (one or more devices are present).
+     * @retval false CUDA is not available (no devices found).
+     */
+    bool isCudaAvailable();
 }
 
 #endif
