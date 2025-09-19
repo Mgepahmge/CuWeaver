@@ -75,9 +75,58 @@ namespace cuweaver {
         BlockingSyncMapHost = 0x0B //!< BlockingSync scheduling + enable device-accessible pinned host memory allocation.
     };
 
+    /**
+     * @enum cudaMemMetaFlags
+     * @brief Flags indicating the intended access direction for encapsulated CUDA memory.
+     *
+     * @details Used to mark whether the next operation on the encapsulated CUDA memory
+     *          will be a write or a read. This helps manage memory access semantics
+     *          during CUDA operations.
+     */
     enum class cudaMemMetaFlags {
-        WRITE,
-        READ
+        WRITE, //!< Marks the memory for an upcoming write operation.
+        READ   //!< Marks the memory for an upcoming read operation.
+    };
+
+    /**
+     * @namespace deviceFlags
+     * @brief Namespace containing device selection flags for the library's stream manager.
+     *
+     * @details Encapsulates enumeration flags used by the library's stream manager to determine
+     *          which device a CUDA operation should execute on.
+     */
+    namespace deviceFlags {
+        /**
+         * @enum deviceFlags::type
+         * @brief Device selection flags for the library's stream manager when scheduling CUDA operations.
+         *
+         * @details Determines the target device for a CUDA operation during scheduling:
+         *          - Auto: Automatically selects the device with the largest amount of memory among
+         *            those associated with the memory involved in the operation.
+         *          - Current: Continues using the currently active device without switching.
+         *          - Host: Marks host memory, typically used for operations (e.g., memcpy) involving host memory.
+         */
+        enum type {
+            Auto = 0xfffffff, //!< Automatically select device with the most memory from involved devices.
+            Current = 0xffffffe, //!< Use current device without switching.
+            Host = 0xffffffd //!< Mark host memory (for operations like memcpy involving host memory).
+        };
+    }
+
+    /**
+     * @enum memcpyFlags
+     * @brief Flags specifying the direction of a memory copy operation.
+     *
+     * @details Used to define the source and target locations for CUDA memory copy operations.
+     *          Each flag represents a distinct combination of source (host or device)
+     *          and target (host or device), or a default behavior.
+     */
+    enum class memcpyFlags {
+        HostToHost = 0, //!< Memory copy from host to host.
+        HostToDevice = 1, //!< Memory copy from host to CUDA device.
+        DeviceToHost = 2, //!< Memory copy from CUDA device to host.
+        DeviceToDevice = 3, //!< Memory copy from CUDA device to another CUDA device.
+        Default = 4 //!< Use default copy direction or automatic detection.
     };
 }
 
