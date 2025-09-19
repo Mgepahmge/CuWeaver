@@ -85,12 +85,13 @@ Once the library is installed, you can use it to manage concurrency in your CUDA
 
 ### Current Progress:
 
-1. **C++-style CUDA Runtime API Wrappers** (In Progress): Wrapping core CUDA Runtime functions (like `cudaMalloc`) with C++-style abstractions using RAII and move semantics.
+1. **C++-style CUDA Runtime API Wrappers** (Completed): Wrapping core CUDA Runtime functions (like `cudaMalloc`) with C++-style abstractions using RAII and move semantics.
+2. **Automatic Concurrency Management** (Completed): Automating the flow control for memory and computation streams, including event-driven dependency management between different operations.
+3. **Simplified Multi-GPU Management** (In Progress): Streamlining memory management and kernel invocation for multi-GPU systems, with automatic memory transfers and optimizations for cross-GPU communication.
 
 ### Upcoming Features:
 
-2. **Automatic Concurrency Management** (Planned): Automating the flow control for memory and computation streams, including event-driven dependency management between different operations.
-3. **Simplified Multi-GPU Management** (Planned): Streamlining memory management and kernel invocation for multi-GPU systems, with automatic memory transfers and optimizations for cross-GPU communication.
+4. **Automated, Portable CUDA Memory Management** (Planned): Developing a more streamlined, portable approach to memory management across different CUDA devices, including automatic memory allocation, transfers, and synchronization.
 
 ---
 

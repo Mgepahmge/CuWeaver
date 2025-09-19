@@ -61,14 +61,15 @@ CuWeaver works by automatically separating memory operations (e.g., allocation, 
 
 ## Project Plan and Progress
 
-### Current Progress
+### Current Progress:
 
-1. **C++-style CUDA Runtime API Wrappers**: Wrapping core CUDA Runtime functions (e.g., `cudaMalloc`) with C++-style abstractions using RAII and move semantics.
+1. **C++-style CUDA Runtime API Wrappers** (Completed): Wrapping core CUDA Runtime functions (like `cudaMalloc`) with C++-style abstractions using RAII and move semantics.
+2. **Automatic Concurrency Management** (Completed): Automating the flow control for memory and computation streams, including event-driven dependency management between different operations.
+3. **Simplified Multi-GPU Management** (In Progress): Streamlining memory management and kernel invocation for multi-GPU systems, with automatic memory transfers and optimizations for cross-GPU communication.
 
-### Upcoming Features
+### Upcoming Features:
 
-2. **Automatic Concurrency Management**: Automating flow control for memory and computation streams, with event-driven dependency management.
-3. **Simplified Multi-GPU Management**: Streamlining memory management and kernel invocation for multi-GPU systems, with automatic memory transfers and optimizations.
+4. **Automated, Portable CUDA Memory Management** (Planned): Developing a more streamlined, portable approach to memory management across different CUDA devices, including automatic memory allocation, transfers, and synchronization.
 
 ## Contributing
 
