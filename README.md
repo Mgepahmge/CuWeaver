@@ -68,7 +68,67 @@ The library will be installed as a static library.
 Once the library is installed, you can use it to manage concurrency in your CUDA applications. The library provides simple and intuitive C++ interfaces to wrap CUDA Runtime APIs and manage memory and event flows.
 
 ```cpp
-// Not yet completed
+// CuWeaver - Automatic CUDA Stream Management Demo
+#include <cuweaver/StreamManager.cuh>
+
+__global__ void fillKernel(int* data, int value, size_t size) {
+    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) data[idx] = value;
+}
+
+__global__ void addKernel(int* c, const int* a, const int* b, size_t size) {
+    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) c[idx] = a[idx] + b[idx];
+}
+
+int main() {
+    using namespace cuweaver;
+    
+    auto manager = &StreamManager::getInstance();
+    manager->initialize(50, 8, 4); // Event pool, execution streams, resource streams
+    
+    int *a, *b, *c;
+    constexpr size_t size = 1 << 20;
+    
+    // GPU memory allocation
+    manager->malloc(&a, size * sizeof(int), 0);
+    manager->malloc(&b, size * sizeof(int), 0);
+    manager->malloc(&c, size * sizeof(int), 0);
+    
+    dim3 grid((size + 511) / 512), block(512);
+    
+    // Concurrent operations - automatic stream management and dependency tracking
+    // Note: All StreamManager operations are non-blocking "submissions" to CUDA,
+    // they return immediately without blocking the host thread
+    manager->launchKernel(fillKernel, grid, block, 0, deviceFlags::Auto, 
+                         makeWrite(a, 0), 1, size);
+    manager->launchKernel(fillKernel, grid, block, 0, deviceFlags::Auto, 
+                         makeWrite(b, 0), 2, size);
+    
+    // Automatically waits for a and b to be ready before execution
+    // This submission also returns immediately - dependency is handled by CUDA streams
+    manager->launchKernel(addKernel, grid, block, 0, deviceFlags::Auto, 
+                         makeWrite(c, 0), makeRead(a, 0), makeRead(b, 0), size);
+    
+    // Automatically waits for computation to complete before copying
+    // This memcpy submission is also non-blocking to the host thread
+    auto h_result = new int[size];
+    manager->memcpy(h_result, Host, c, 0, size * sizeof(int), memcpyFlags::DeviceToHost);
+    
+    cudaDeviceSynchronize(); // Explicit synchronization needed to wait for all GPU operations to complete
+    
+    // Verify results: should all be 3 (1+2)
+    std::cout << "Result: ";
+    for (int i = 0; i < 5; ++i) std::cout << h_result[i] << " ";
+    
+    // Clean up resources
+    delete[] h_result;
+    manager->free(a, 0);
+    manager->free(b, 0);
+    manager->free(c, 0);
+    
+    return 0;
+}
 ```
 
 ---
