@@ -426,7 +426,7 @@ namespace cuweaver {
          *     Nothing. If the device is invalid no action is taken.
          */
         template <typename T>
-        void free(T** data, const deviceType device) {
+        void free(T* data, const deviceType device) {
             if (!isValidDevice(device)) {
                 return;
             }

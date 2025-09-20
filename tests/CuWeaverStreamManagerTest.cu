@@ -1039,7 +1039,7 @@ TEST_F(StreamManagerTest, FreeBasicTest) {
                          cuweaver::makeWrite(f_mem, 0), arraySize, 25.0f);
 
     // Test free operation (should wait for kernel completion)
-    EXPECT_NO_THROW(manager->free(&f_mem, 0));
+    EXPECT_NO_THROW(manager->free(f_mem, 0));
 
     // Synchronize to ensure free completes
     cudaDeviceSynchronize();
@@ -1083,8 +1083,8 @@ TEST_F(StreamManagerTest, FreeDependencyTest) {
                          arraySize, 1.0f);
 
     // Free temporary memories (should wait for all operations to complete)
-    EXPECT_NO_THROW(manager->free(&f_temp1, 0));
-    EXPECT_NO_THROW(manager->free(&f_temp2, 0));
+    EXPECT_NO_THROW(manager->free(f_temp1, 0));
+    EXPECT_NO_THROW(manager->free(f_temp2, 0));
 
     // Synchronize and verify final result is still valid
     cudaDeviceSynchronize();
@@ -1125,7 +1125,7 @@ TEST_F(StreamManagerTest, MultipleFreeTest) {
     // Free all memory blocks (dependency system should handle completion)
     for (int i = 0; i < numAllocations; ++i) {
         float* f_ptr = static_cast<float*>(allocated_ptrs[i]);
-        EXPECT_NO_THROW(manager->free(&f_ptr, 0))
+        EXPECT_NO_THROW(manager->free(f_ptr, 0))
             << "Free operation " << i << " failed";
     }
 
@@ -1146,7 +1146,7 @@ TEST_F(StreamManagerTest, FreeInvalidDeviceTest) {
     float* f_mem = static_cast<float*>(d_mem);
 
     // Test free with invalid device ID (should be handled gracefully)
-    EXPECT_NO_THROW(manager->free(&f_mem, 999));
+    EXPECT_NO_THROW(manager->free(f_mem, 999));
 
     // Clean up properly
     cudaFree(d_mem);
@@ -1193,8 +1193,8 @@ TEST_F(StreamManagerTest, ConcurrentMemoryOperationsTest) {
     manager->memcpy(d_result, 0, f_mem3, 0, allocSize, cuweaver::memcpyFlags::DeviceToDevice);
 
     // Free intermediate memories
-    manager->free(&f_mem1, 0);
-    manager->free(&f_mem2, 0);
+    manager->free(f_mem1, 0);
+    manager->free(f_mem2, 0);
 
     // Synchronize and verify
     cudaDeviceSynchronize();
@@ -1208,7 +1208,7 @@ TEST_F(StreamManagerTest, ConcurrentMemoryOperationsTest) {
     }
 
     // Final cleanup
-    manager->free(&f_mem3, 0);
+    manager->free(f_mem3, 0);
 }
 
 // Comprehensive integration test combining malloc, memcpy, and free
@@ -1249,8 +1249,8 @@ TEST_F(StreamManagerTest, MallocMemcpyFreeIntegrationTest) {
                          arraySize, 5.0f);
 
     // Step 5: Free source and temp (final result should still be valid)
-    manager->free(&f_source, 0);
-    manager->free(&f_temp, 0);
+    manager->free(f_source, 0);
+    manager->free(f_temp, 0);
 
     // Step 6: Copy final result to host and verify
     cudaDeviceSynchronize();
@@ -1264,6 +1264,6 @@ TEST_F(StreamManagerTest, MallocMemcpyFreeIntegrationTest) {
     }
 
     // Final cleanup
-    manager->free(&f_final, 0);
+    manager->free(f_final, 0);
 }
 
