@@ -150,7 +150,10 @@ namespace cuweaver {
     }
 
     bool StreamManager::isValidDevice(const deviceType device) const {
-        if (device >= 0 && device < numDevices && device != deviceFlags::Auto && device != deviceFlags::Current) {
+        if (device >= 0 && device < numDevices) {
+            return true;
+        }
+        if (device == deviceFlags::Current || device == deviceFlags::Auto) {
             return true;
         }
         return false;
